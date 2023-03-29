@@ -1,0 +1,20 @@
+Package: binaryPPIclassifier
+Title: Function to use a support vector machine learning algorithm to classify quantitative protein-protein interaction data
+Version: 0.0.1.0
+Authors@R: 
+    person("Philipp", "Trepte", , "philipp.trepte@imba.oeaw.ac.at", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-8141-6272"))
+Maintainer: Philipp Trepte <philipp.trepte@imba.oeaw.ac.at>
+Description: Universal and unbiased approach to score quantitative PPI data from various assays (e.g. LuTHy, N2H, MAPPIT, AlphaFold, etc.). 
+  For datasets that contain a high degree of mislabeling, it has been shown that a multi-adaptive sampling approach can be used to iteratively update the labeling class (positive or negative) of the training data and thereby improve the performance of the SVM learning algorithm (Yang et al, 2017). 
+  We validated and used this approach to analyze quantitative PPI datasets, in which frequently, a positive reference set interaction is labeled positive, but will not score positive in a certain assay or tagging configuration and should therefore be relabeled as negative (for this specific assay or tagging orientation) during the training of the SVM.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.1
+Imports: 
+    dplyr,
+    e1071,
+    stringr,
+    tibble,
+    tidyr
