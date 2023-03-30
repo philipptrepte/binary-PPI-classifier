@@ -30,12 +30,12 @@ ppi.prediction(
   top = NULL,
   inclusion = NULL,
   cs = "median",
-  iter = 10,
+  iter = 5,
   verbose = TRUE
 )
 }
 \arguments{
-\item{PPIdf:}{quantitative PPI data set containing interactions to be classified}
+\item{PPIdf:}{binary PPI data set containing interactions to be classified}
 
 \item{referenceSet:}{reference PPI data set containing reference interactions used to train the svm models}
 
@@ -91,4 +91,7 @@ ppi.prediction(
 }
 \description{
 Function to use a support vector machine learning algorithm to classify quantitative protein-protein interaction data.
+}
+\examples{
+ppi.prediction()
 }

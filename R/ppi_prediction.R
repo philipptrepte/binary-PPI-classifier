@@ -12,7 +12,7 @@ usethis::use_package('e1071')
 #' @import stringr
 #' @import e1071
 #'
-#' @param PPIdf: quantitative PPI data set containing interactions to be classified
+#' @param PPIdf: binary PPI data set containing interactions to be classified
 #' @param referenceSet: reference PPI data set containing reference interactions used to train the svm models
 #' @param standardize: if TRUE, performs z-score normalization of the data
 #' @param seed: seed
@@ -43,7 +43,7 @@ usethis::use_package('e1071')
 #' @return
 #' @export
 #'
-#' @examples
+#' @examples ppi.prediction()
 ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALSE, seed = 555,
                             method.scaling = "robust.scaler",
                             iter.scaler = TRUE, range = c(0.25, 0.75), data.scaling = "main",
@@ -51,7 +51,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
                             assay = c("mean_cBRET", "mean_mCit"), all.configurations = TRUE,
                             sampling = "weighted", weightBy = "mean_cBRET", weightHi = TRUE,
                             kernelType = "radial", classificationType = "C-classification", svm.parameters = FALSE, C = 100, gamma = NULL, coef0 = 0, degree = 2,
-                            ensembleSize = 50, top = NULL, inclusion = NULL, cs = "median", iter = 10, verbose = TRUE) {
+                            ensembleSize = 50, top = NULL, inclusion = NULL, cs = "median", iter = 5, verbose = TRUE) {
 
   base::set.seed(seed)
   #define functions for multi-adaptive sampling
@@ -137,6 +137,9 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
   if(is.null(PPIdf)) {
     if(verbose)
       base::message("No user PPI test-dataset loaded: LuTHy reference set used as test set")
+
+    data("luthy_reference_set")
+
     PPIdf <- luthy_reference_sets %>%
       dplyr::filter(data %in% assay)
   }
