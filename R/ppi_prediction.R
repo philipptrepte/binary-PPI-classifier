@@ -754,6 +754,10 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
             cat(paste0("minimum number of interactions to include are 30", "\n"))
             inclusion <- 30
           }
+          if(inclusion > n.ppis*0.25) {
+            inclusion <- round(n.ppis * 0.25, 0)
+            cat(paste0("at ensembleSize = ", ensembleSize, ", the number of interactions in each training set is greater than 25% of the entire training set", "\n"))
+          }
         }
         if(is.null(weightBy)){
           weightBy <- assay[1]
@@ -761,35 +765,35 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
         if(sampling == "unweighted") {
           if(counter == 1) {
             prs.interactions <- referenceSet %>%
-              filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
-              slice_max(n = top, order_by = score) %>%
-              slice_sample(n = inclusion) %>%
+              dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+              dplyr::slice_max(n = top, order_by = score) %>%
+              dplyr::slice_sample(n = inclusion) %>%
               dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
           }
           if(counter > 1) {
             prs.interactions <- data.frame(probability) %>%
-              rownames_to_column("sample") %>%
-              separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
-              right_join(referenceSet, by = c("complex", "reference", "interaction", "sample", "orientation")) %>%
-              filter(data == weightBy & !is.na(weightBy) & reference == "PRS" & !is.na(probability)) %>%
-              slice_max(n = top, order_by = score) %>%
-              slice_sample(n = inclusion) %>%
+              tibble::rownames_to_column("sample") %>%
+              tidyr::separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
+              dplyr::right_join(referenceSet, by = c("complex", "reference", "interaction", "sample", "orientation")) %>%
+              dplyr::filter(data == weightBy & !is.na(weightBy) & reference == "PRS" & !is.na(probability)) %>%
+              dplyr::slice_max(n = top, order_by = score) %>%
+              dplyr::slice_sample(n = inclusion) %>%
               dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
 
           }
         } else if(sampling == "weighted") {
           if(weightHi == TRUE) {
             prs.interactions <- referenceSet %>%
-              filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
-              slice_max(n = top, order_by = score) %>%
-              slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% filter(data == weightBy) %>% pull(score), na.rm = TRUE))) %>%
+              dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+              dplyr::slice_max(n = top, order_by = score) %>%
+              dplyr::slice_sample(n = inclusion, weight_by = score + abs(min(referenceSet %>% dplyr::filter(data == weightBy) %>% dplyr::pull(score), na.rm = TRUE)) + 1e-5) %>%
               dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
           }
           if(weightHi == FALSE) {
             prs.interactions <- referenceSet %>%
               filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
               slice_min(n = top, order_by = score) %>%
-              slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% filter(data == weightBy) %>% pull(score), na.rm = TRUE))) %>%
+              slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% filter(data == weightBy) %>% pull(score), na.rm = TRUE)) + 1e-5) %>%
               dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
           }
         }
