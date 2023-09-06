@@ -37,7 +37,7 @@ usethis::use_package('randomForest')
 #' @param ensembleSize: number of independent training sets assembled
 #' @param top: number of highest scoring prs and rrs interactions to randomly sample from; if NULL, only interactions above the 'cs' will be used
 #' @param inclusion: number of interactions to include during training of each model (>30); if NULL, number of interactions are calculated from the training sets assembled (ensembleSize) so that each interaction has been sampled with a 99.99% probability.
-#' @param cs: sample interactions with quantitative scores above the specified 'cs' from the main assay
+#' @param cutoff: sample interactions with quantitative scores above the specified 'cutoff' from the main assay
 #' @param iter: number of iterations performed to reclassify the training set
 #' @param verbose: give detailed information
 #'
@@ -58,7 +58,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
                            assay = c("mean_cBRET", "mean_mCit"), all.configurations = TRUE,
                            sampling = "weighted", weightBy = "mean_cBRET", weightHi = TRUE,
                            model.type = "svm", kernelType = "linear", svm.parameters = FALSE, C = 100, gamma = NULL, coef0 = 0, degree = 2,
-                           ensembleSize = 50, top = NULL, inclusion = NULL, cs = "median", iter = 5, verbose = TRUE) {
+                           ensembleSize = 50, top = NULL, inclusion = NULL, cutoff = "median", iter = 5, verbose = TRUE) {
 
   base::set.seed(seed)
   #define functions for multi-adaptive sampling
@@ -734,11 +734,11 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
           if(e %% 10 == 0) {
             message(e, ".")
           }
-        if(cs == "median") {
+        if(cutoff == "median") {
           cs <- median(referenceSet %>% filter(data == assay[1]) %>% pull(score), na.rm = TRUE)
         }
 
-        if(cs == "all") {
+        if(cutoff == "all") {
           cs <- min(referenceSet %>% filter(data == assay[1]) %>% pull(score), na.rm = TRUE)
         }
 
@@ -754,9 +754,9 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
             cat(paste0("minimum number of interactions to include are 30", "\n"))
             inclusion <- 30
           }
-          if(inclusion > n.ppis*0.25) {
-            inclusion <- round(n.ppis * 0.25, 0)
-            cat(paste0("at ensembleSize = ", ensembleSize, ", the number of interactions in each training set is greater than 25% of the entire training set", "\n"))
+          if(inclusion > n.ppis*0.2) {
+            inclusion <- round(n.ppis * 0.2, 0)
+            base::message(paste0("at ensembleSize = ", ensembleSize, ", the number of interactions in each training set is greater than 20% of the entire training set. Interactions to include was limited to 25% of the entire training set = ", inclusion, "\n"))
           }
         }
         if(is.null(weightBy)){

@@ -198,9 +198,9 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     ggplot2::geom_ribbon(aes(ymin = Ci25, ymax = Ci75), alpha = 0.15, linetype = "dotdash", size = 0.5) +
     ggplot2::geom_line(size = 1) +
     ggplot2::facet_wrap(. ~ Performance_Type, scales = "free", labeller = labeller(Performance_Type = c(Loss = "Binary Cross-Entropy Loss", Accuracy = "Accuracy", Hinge = "Hinge Loss"))) +
-    ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste("Mean + IQR Learning Curves for the ", ensembleSize," SVM models (", base::ifelse(is.null(sampling), "unweighted", sampling), "sampling)")) +
-    ggplot2::scale_color_manual(values = c("Training" = color.pt2[3], "Test" = color.pt2[1])) +
-    ggplot2::scale_fill_manual(values = c("Training" = "blue", "Test" = "red")) +
+    ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste0("Mean + IQR Learning Curves for the ", ensembleSize," SVM models (", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling), "sampling)")) +
+    ggplot2::scale_color_manual(values = c("Training" = "#6CA6C1", "Test" = "#D930C5")) +
+    ggplot2::scale_fill_manual(values = c("Training" = "#6CA6C1", "Test" = "#D930C5")) +
     ggpubr::theme_pubr() +
     ggplot2::theme(text = element_text(family = "Avenir"),
           plot.title = element_text(size = 12),
