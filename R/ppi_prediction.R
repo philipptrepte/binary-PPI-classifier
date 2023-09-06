@@ -3,31 +3,32 @@ usethis::use_package('tidyr')
 usethis::use_package('tibble')
 usethis::use_package('stringr')
 usethis::use_package('e1071')
+usethis::use_package('randomForest')
 
-#' Function to use a support vector machine learning algorithm to classify quantitative protein-protein interaction data.
+#' Function to use a support vector or random forest machine learning algorithm or to classify quantitative protein-protein interaction data.
 #'
 #' @import dplyr
 #' @import tidyr
 #' @import tibble
 #' @import stringr
 #' @import e1071
+#' @import randomForest
 #'
 #' @param PPIdf: binary PPI data set containing interactions to be classified
 #' @param referenceSet: reference PPI data set containing reference interactions used to train the svm models
-#' @param standardize: if TRUE, performs z-score normalization of the data
-#' @param seed: seed
+#' @param seed: set seed
 #' @param method.scaling: accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"
 #' @param iter.scaler: if TRUE and when using "robust.scaler" it iteratively performs robust scaler normalization until the IQR of each construct is within the IQR of all loaded data sets
-#' @param range: probs in stats::quantile(x, ...): numeric vector of probabilities
-#' @param data.scaling: speficies if the data of the first assay is scaled ("main") or if the data of all assays are scaled ("all")
+#' @param range: IQR range used in "robust.scaler"
+#' @param data.scaling: speficies which data provided under 'assay' is scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.
 #' @param negative.reference: string in the column "complex" to specify the negative/random interactions
 #' @param assay: assay parameters used for training
 #' @param all.configurations: if TRUE all orientations for each interactions are used; if FALSE only the highest scoring orientation for each interaction is used
 #' @param sampling: if TRUE weighted sampling is used when assembling the positive training sets
 #' @param weightBy: assay parameter used for weighted sampling
 #' @param weightHi: if TRUE weighted sampling uses preferentially higher values; if FALSE weighted sampling uses preferentially smaller values
+#' @param model.type: the machine learning algorithm used. Support are support vector machines: "svm" and random fores: "randomForest
 #' @param kernelType: the kernel used in training and predicting, see ?e1071::svm for details
-#' @param classificationType: currently C-classification for the svm function is supported; see ?e1071::svm for details
 #' @param svm.parameters: if TRUE, the best parameters (degree, gamma, coef0, cost) are calculated; if FALSE the parameters must be provided manually
 #' @param C: cost of constraints violation (default: 1)—it is the ‘C’-constant of the regularization term in the Lagrange formulation; see ?e1071::svm for details
 #' @param gamma: parameter needed for all kernels except linear (default: 1/(data dimension)); see ?e1071::svm for details
@@ -40,78 +41,93 @@ usethis::use_package('e1071')
 #' @param iter: number of iterations performed to reclassify the training set
 #' @param verbose: give detailed information
 #'
-#' @return
+#' @return A list containing the results from the machine learning prediction classes and the parameters used. Input for the learning.curve function.
 #' @export
 #'
-#' @examples ppi.prediction()
-ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALSE, seed = 555,
-                            method.scaling = "robust.scaler",
-                            iter.scaler = TRUE, range = c(0.25, 0.75), data.scaling = "main",
-                            negative.reference = c("RRS", "inter-complex"),
-                            assay = c("mean_cBRET", "mean_mCit"), all.configurations = TRUE,
-                            sampling = "weighted", weightBy = "mean_cBRET", weightHi = TRUE,
-                            kernelType = "radial", classificationType = "C-classification", svm.parameters = FALSE, C = 100, gamma = NULL, coef0 = 0, degree = 2,
-                            ensembleSize = 50, top = NULL, inclusion = NULL, cs = "median", iter = 5, verbose = TRUE) {
+#' @examples
+#' load('data/luthy_reference_sets.RData')
+#' example <- ppi.prediction(PPIdf = luthy_reference_sets, referenceSet = luthy_reference_sets,
+#'                           assay = c("mean_cBRET", "mean_mCit"), negative.reference = c("RRS"),
+#'                           model.type = "svm", ensembleSize = 50,
+#'                           sampling = 'weighted', weightBy = "mean_cBRET")
+#'
+ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
+                           method.scaling = "robust.scaler",
+                           iter.scaler = TRUE, range = c(0.25, 0.75), data.scaling = "main",
+                           negative.reference = c("RRS", "inter-complex"),
+                           assay = c("mean_cBRET", "mean_mCit"), all.configurations = TRUE,
+                           sampling = NULL, weightBy = "mean_cBRET", weightHi = TRUE,
+                           model.type = "svm", kernelType = "linear", svm.parameters = FALSE, C = 100, gamma = NULL, coef0 = 0, degree = 2,
+                           ensembleSize = 50, top = NULL, inclusion = NULL, cs = "median", iter = 5, verbose = TRUE) {
 
   base::set.seed(seed)
   #define functions for multi-adaptive sampling
-  multiAdaSampling <- function(train.mat, test.mat, label, kernelType = kernelType, iter = iter, cost = C, gamma = gamma, degree = degree, coef0 = coef0,
-                               type = classificationType) {
+  multiAdaSampling <- function(train.mat, test.mat, label, model.type, kernelType = kernelType, iter = iter, cost = C, gamma = gamma, degree = degree, coef0 = coef0) {
 
     X <- train.mat
     Y <- label
 
-    model <- c()
-    prob.mat <- c()
+    model <- NULL
+    pred.mat <- NULL
     accuracy <- rep(NA, iter)
+
     for (i in seq_len(iter)) {
       tmp <- X
-      base::rownames(tmp) <- NULL
-      if(is.null(gamma)) {
-        gamma <- 0.1/length(tmp)
-      }
-      if(type == "C-classification") {
-        model <- e1071::svm(Y ~ ., data = base::data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0, cross = 10)
-        pred.train <- stats::predict(model, train.mat, decision.values = TRUE, probability = TRUE)
-        prob.mat <- attr(pred.train, "probabilities")
-        accuracy[i] <- base::mean(pred.train == label)
-      } else {
-        stop("Error: only C-classification can be used at the moment.")
+      rownames(tmp) <- NULL
+
+      if (is.null(gamma)) {
+        gamma <- 0.1 / length(tmp)
       }
 
+      if (model.type == "svm") {
+        model <- e1071::svm(Y ~ ., data = data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0, cross = 10)
+        pred.train <- stats::predict(model, train.mat, decision.values = TRUE, probability = TRUE)
+        pred.mat <- attr(pred.train, "probabilities")
+        accuracy[i] <- base::mean(pred.train == label)
+      } else if (model.type == "randomforest") {
+        model <- randomForest::randomForest(X, factor(Y))
+        pred.train <- stats::predict(model, train.mat, type = "prob")
+        pred.mat <- pred.train[,c(2,1)]
+        accuracy[i] <- base::mean(pred.train == label)
+      } else {
+        stop("Invalid model.type. Please choose 'svm' or 'randomforest'.")
+      }
 
       X <- c()
       Y <- c()
-      for (j in seq_len(base::ncol(prob.mat))) {
-        voteClass <- prob.mat[label == base::colnames(prob.mat)[j], ]
-        idx <- c()
-        idx <- sample(seq_len(base::nrow(voteClass)),
+
+      for (j in seq_len(base::ncol(pred.mat))) {
+        voteClass <- pred.mat[label == base::colnames(pred.mat)[j], ]
+        idx <- base::sample(seq_len(base::nrow(voteClass)),
                       size = base::nrow(voteClass), replace = TRUE,
                       prob = voteClass[, j])
-        X <- base::rbind(X, base::as.matrix(train.mat[base::rownames(voteClass)[idx],]))
+        X <- base::rbind(X, base::as.matrix(train.mat[base::rownames(voteClass)[idx], ]))
         Y <- c(Y, label[base::rownames(voteClass)[idx]])
       }
-      base::colnames(X) <- assay
+      base::colnames(X) <- base::colnames(train.mat)
     }
 
-    pred.values <- stats::predict(model, newdata = test.mat, decision.values = TRUE, probability = TRUE)
-    pred <- attr(pred.values, "probabilities")
+    if(model.type == "svm") {
+      pred.values <- stats::predict(model, newdata = test.mat, decision.values = TRUE, probability = TRUE)
+      pred <- attr(pred.values, "probabilities")
+    } else if (model.type == "randomforest") {
+      pred.values <- stats::predict(model, newdata = test.mat, type = "prob")
+      pred <- pred.values[,c(2,1)]
+    } else {
+      stop("Invalid model.type. Please choose 'svm' or 'randomforest'.")
+    }
+
 
     return(list(pred, pred.values, model, accuracy))
   }
 
   `%ni%` <- Negate(`%in%`)
+  colnames_necessary <- c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_tag","Acceptor_protein", "complex", "interaction", "sample", "orientation", "data", "score")
 
-  #use provided reference set data if needed
+  #check reference set training set
   if(is.null(referenceSet)) {
-    if(verbose)
-      base::message("No user reference set data provided. Published reference data from Trepte et al. is used.")
-    data("luthy_reference_set")
-
-    referenceSet <- luthy_reference_sets %>%
-      dplyr::filter(data %in% assay) %>%
-      dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, base::paste(negative.reference, collapse = "|")), "RRS", "PRS"))
-  }
+    stop("User must provide a reference data set.")
+    }
   else {
     base::message("User defined-reference set provided.")
     referenceSet <- referenceSet %>%
@@ -121,7 +137,12 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
 
   #check for luthy assay and additional parameters
   if(any(assay %ni% referenceSet$data)) {
-    stop("specify 'assay' in the that can be found in the 'data' column of your 'referenceSet' ", call. = FALSE)
+    stop("the specified 'assay(s)' can not be found in the 'data' column of your 'referenceSet' ", call. = FALSE)
+  }
+  if(any(colnames_necessary %ni% colnames(referenceSet))) {
+    missing_colnames <- colnames_necessary[base::which(colnames_necessary %ni% base::colnames(referenceSet))]
+    stop(base::paste0("User provided reference set does not contain all necessary columns. The column(s) ", missing_colnames, " are missing.", "\n",
+                "Necessary columns: ", base::paste(colnames_necessary, collapse = ", "), "\n"))
   }
 
   donor.n <- referenceSet %>%
@@ -133,15 +154,9 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
     dplyr::group_by(Acceptor) %>%
     dplyr::count()
 
-  #load test or use LuTHy reference set
+  #check PPI test set
   if(is.null(PPIdf)) {
-    if(verbose)
-      base::message("No user PPI test-dataset loaded: LuTHy reference set used as test set")
-
-    data("luthy_reference_set")
-
-    PPIdf <- luthy_reference_sets %>%
-      dplyr::filter(data %in% assay)
+    stop("No user PPI test-dataset loaded: LuTHy reference set used as test set")
   }
   else {
     base::message("User-defined PPI test-dataset loaded.")
@@ -149,9 +164,15 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
       dplyr::filter(data %in% assay)
   }
   if(any(assay %ni% PPIdf$data)) {
-    stop("specify 'assay' in the that can be found in the 'data' column of your 'PPIdf' ", call. = FALSE)
+    stop("the specified 'assay(s)' can not be found in the 'data' column of your 'PPIdf' ", call. = FALSE)
+  }
+  if(any(colnames_necessary %ni% base::colnames(PPIdf))) {
+    missing_colnames <- colnames_necessary[base::which(colnames_necessary %ni% base::colnames(PPIdf))]
+    stop(base::paste0("User provided PPI data set does not contain all necessary columns. The column(s) ", missing_colnames, " are missing.", "\n",
+                "Necessary columns: ", base::paste(colnames_necessary, collapse = ", "), "\n"))
   }
 
+  #check on which features data scaling should be applied
   if(data.scaling == "main") {
     assay.scaling <- assay[1]
   }
@@ -159,8 +180,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
     assay.scaling <- assay
   }
 
-
-  #check for method.scaling
+  #check for the method to scale the data
   if(method.scaling == "none") {
     base::message("Data of the training and test sets are not scaled.")
   }
@@ -613,7 +633,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
     PPIdf <- dplyr::bind_rows(PPIdf.list) %>%
       base::rbind(PPIdf.unscaled)
   }
-  #test all or highest scoring configuration per interaction
+
+  #test all or highest scoring configurations per interaction
   if(all.configurations == FALSE) {
     if(verbose)
       base::message("Only the highest scoring orientation for each interaction is used for the test set.")
@@ -696,9 +717,10 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
             "degree: ", degree, "\n")
   }
 
-  if(sampling %ni% c("weighted")) {
+  if(!is.null(sampling) && sampling != "weighted") {
     stop("Invalid 'sampling'. Choose between 'NULL' or 'weighted'.")
   }
+  training.sets <- list()
   ensembleSize_total <- ensembleSize
   while(any(base::rowSums(!is.na(TrainMat[,-c(1:length(assay))]), na.rm = TRUE) == 0) | any(base::rowSums(!is.na(TestMat[,-c(1:length(assay))]), na.rm = TRUE) == 0)) {
     counter = counter+1
@@ -710,112 +732,130 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
       ensembleSize_total <- ensembleSize_total+ensembleSize
       probability <- base::rowMeans(TrainMat[,-c(1:length(assay))], na.rm = TRUE)
     }
-    for (e in seq_len(ensembleSize)) {
-      if(verbose)
-        if(e %% 10 == 0) {
-          base::message(e, ".")
-        }
-      if(cs == "median") {
-        cs <- stats::median(referenceSet %>% dplyr::filter(data == assay[1]) %>% dplyr::pull(score), na.rm = TRUE)
-      }
+    for (e in seq(from = ifelse(ensembleSize_total > ensembleSize, ensembleSize_total - ensembleSize, 1),
+                  to = ifelse(ensembleSize_total > ensembleSize, ensembleSize_total, ensembleSize))) {
 
-      n.ppis <- referenceSet %>%
-        dplyr::filter(data == assay[1] & score > cs) %>% base::nrow()
-
-      if(is.null(top)) {
-        top <- round(n.ppis, 0)
-      }
-      if(is.null(inclusion)) {
-        inclusion <- round(log(1-0.9999) / log(1-ensembleSize/top),0)
-        if(inclusion < 30) {
-          base::cat(base::paste0("minimum number of interactions to include are 30", "\n"))
-          inclusion <- 30
-        }
-      }
-      if(is.null(weightBy)){
-        weightBy <- assay[1]
-      }
-      if(is.null(sampling)) {
-        if(counter == 1) {
-          prs.interactions <- referenceSet %>%
-            dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
-            dplyr::slice_max(n = top, order_by = score) %>%
-            dplyr::slice_sample(n = inclusion) %>%
-            dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
-        }
-        if(counter > 1) {
-          prs.interactions <- base::data.frame(probability) %>%
-            tibble::rownames_to_column("sample") %>%
-            tidyr::separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
-            dplyr::right_join(referenceSet, by = c("complex", "reference", "interaction", "sample", "orientation")) %>%
-            dplyr::filter(data == weightBy & !is.na(weightBy) & reference == "PRS" & !is.na(probability)) %>%
-            dplyr::slice_max(n = top, order_by = score) %>%
-            dplyr::slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% dplyr::filter(data == weightBy) %>% dplyr::pull(score), na.rm = TRUE))) %>%
-            dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
-
-        }
-      } else if(sampling == "weighted") {
-        if(weightHi == TRUE) {
-          prs.interactions <- referenceSet %>%
-            dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
-            dplyr::slice_max(n = top, order_by = score) %>%
-            dplyr::slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% dplyr::filter(data == weightBy) %>% dplyr::pull(score), na.rm = TRUE))) %>%
-            dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
-        }
-        if(weightHi == FALSE) {
-          prs.interactions <- referenceSet %>%
-            dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
-            slice_min(n = top, order_by = score) %>%
-            dplyr::slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% dplyr::filter(data == weightBy) %>% dplyr::pull(score), na.rm = TRUE))) %>%
-            dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
+      if(ensembleSize > 1) {
+        if(verbose)
+          if(e %% 10 == 0) {
+            message(e, ".")
+          }
+        if(cs == "median") {
+          cs <- median(referenceSet %>% filter(data == assay[1]) %>% pull(score), na.rm = TRUE)
         }
 
-      }
+        if(cs == "all") {
+          cs <- min(referenceSet %>% filter(data == assay[1]) %>% pull(score), na.rm = TRUE)
+        }
 
-      rrs.interactions <- referenceSet %>%
-        dplyr::filter(data == weightBy & !is.na(score) & reference == "RRS") %>%
-        dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference) %>%
-        dplyr::anti_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
-        dplyr::slice_sample(n = base::nrow(prs.interactions))
+        n.ppis <- referenceSet %>%
+          filter(data == assay[1] & score > cs) %>% nrow()
+
+        if(is.null(top)) {
+          top <- round(n.ppis, 0)
+        }
+        if(is.null(inclusion)) {
+          inclusion <- round(log(1-0.9999) / log(1-ensembleSize/top),0)
+          if(inclusion < 30) {
+            cat(paste0("minimum number of interactions to include are 30", "\n"))
+            inclusion <- 30
+          }
+        }
+        if(is.null(weightBy)){
+          weightBy <- assay[1]
+        }
+        if(is.null(sampling)) {
+          if(counter == 1) {
+            prs.interactions <- referenceSet %>%
+              filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+              slice_max(n = top, order_by = score) %>%
+              slice_sample(n = inclusion) %>%
+              dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
+          }
+          if(counter > 1) {
+            prs.interactions <- data.frame(probability) %>%
+              rownames_to_column("sample") %>%
+              separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
+              right_join(referenceSet, by = c("complex", "reference", "interaction", "sample", "orientation")) %>%
+              filter(data == weightBy & !is.na(weightBy) & reference == "PRS" & !is.na(probability)) %>%
+              slice_max(n = top, order_by = score) %>%
+              slice_sample(n = inclusion) %>%
+              dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
+
+          }
+        } else if(sampling == "weighted") {
+          if(weightHi == TRUE) {
+            prs.interactions <- referenceSet %>%
+              filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+              slice_max(n = top, order_by = score) %>%
+              slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% filter(data == weightBy) %>% pull(score), na.rm = TRUE))) %>%
+              dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
+          }
+          if(weightHi == FALSE) {
+            prs.interactions <- referenceSet %>%
+              filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+              slice_min(n = top, order_by = score) %>%
+              slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% filter(data == weightBy) %>% pull(score), na.rm = TRUE))) %>%
+              dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
+          }
+        }
+
+        rrs.interactions <- referenceSet %>%
+          filter(data == weightBy & !is.na(score) & reference == "RRS") %>%
+          dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference) %>%
+          anti_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
+          slice_sample(n = nrow(prs.interactions))
+        }
+
+      if(ensembleSize == 1) {
+        prs.interactions <- referenceSet %>%
+          filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+          dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
+
+        rrs.interactions <- referenceSet %>%
+          filter(data == weightBy & !is.na(score) & reference == "RRS") %>%
+          dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference) %>%
+          anti_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference"))
+        }
 
       positive.train <- referenceSet %>%
-        dplyr::filter(data %in% assay) %>%
-        dplyr::inner_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
-        tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-        tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
-        tibble::column_to_rownames("sample") %>%
+        filter(data %in% assay) %>%
+        inner_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
+        pivot_wider(names_from = "data", values_from = "score") %>%
+        unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
+        column_to_rownames("sample") %>%
         dplyr::select(assay) %>%
-        dplyr::filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
-        base::as.matrix()
-      positive.cls <- rep(2, base::nrow(positive.train))
+        filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
+        as.matrix()
+      positive.cls <- rep(2, nrow(positive.train))
 
       negative.train <- referenceSet %>%
-        dplyr::filter(data %in% assay) %>%
-        dplyr::inner_join(rrs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
-        tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
-        tidyr::pivot_wider(names_from = data, values_from = score) %>%
-        tibble::column_to_rownames("sample") %>%
+        filter(data %in% assay) %>%
+        inner_join(rrs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
+        unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
+        pivot_wider(names_from = data, values_from = score) %>%
+        column_to_rownames("sample") %>%
         dplyr::select(assay) %>%
-        dplyr::filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
-        base::as.matrix()
-      negative.cls <- rep(1, base::nrow(negative.train))
+        filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
+        as.matrix()
+      negative.cls <- rep(1, nrow(negative.train))
 
-      train.mat <- base::rbind(positive.train, negative.train)
-      cls <- base::as.factor(c(positive.cls, negative.cls))
-      names(cls) <- base::rownames(train.mat)
+      train.mat <- rbind(positive.train, negative.train)
+      training.sets[[e]] <- train.mat
+      cls <- as.factor(c(positive.cls, negative.cls))
+      names(cls) <- rownames(train.mat)
 
-      train.ppis <- base::as.data.frame(train.mat) %>%
-        tibble::rownames_to_column("sample") %>%
-        tidyr::separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
+      train.ppis <- as.data.frame(train.mat) %>% rownames_to_column("sample") %>%
+        separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
         dplyr::select(-reference) %>%
-        tidyr::unite(complex, interaction, sample, orientation, col = "sample", sep = ";") %>%
-        dplyr::pull(sample)
+        unite(complex, interaction, sample, orientation, col = "sample", sep = ";") %>%
+        pull(sample)
 
 
       #predict positive interactions based on the training sets; also test performance on the reference set
-      pred.reference <- multiAdaSampling(train.mat, test.mat = subset(TrainTestMat, base::rownames(TrainTestMat) %ni% base::rownames(train.mat)), label = cls, kernelType = kernelType, iter = iter,
+      pred.reference <- multiAdaSampling(train.mat, test.mat = subset(TrainTestMat, rownames(TrainTestMat) %ni% rownames(train.mat)), model.type = model.type, label = cls, kernelType = kernelType, iter = iter,
                                          cost = C, gamma = gamma, degree = degree, coef0 = coef0)
-      pred.test <- multiAdaSampling(train.mat, test.mat = subset(testMat, base::rownames(testMat) %ni% train.ppis), label = cls, kernelType = kernelType, iter = iter,
+      pred.test <- multiAdaSampling(train.mat, test.mat = subset(testMat, rownames(testMat) %ni% train.ppis), model.type = model.type, label = cls, kernelType = kernelType, iter = iter,
                                     cost = C, gamma = gamma, degree = degree, coef0 = coef0)
 
       predTrainMat[[e]] <- pred.reference[[1]][, 1]
@@ -828,23 +868,17 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
       model.e[[e]] <- pred.test[[3]]
       accuracy.e[[e]] <- pred.test[[4]]
 
-      TrainMat <- base::as.data.frame(TrainMat) %>%
-        tibble::rownames_to_column("id") %>%
-        dplyr::left_join(base::as.data.frame(predTrainMat[[e]]) %>%
-                           tibble::rownames_to_column("id"),
-                         by = "id") %>%
-        tibble::column_to_rownames("id") %>%
-        base::as.matrix()
-      base::colnames(TrainMat)[[length(assay)+e]] <- base::paste0("ensembleSize_",e)
+      TrainMat <- as.data.frame(TrainMat) %>% rownames_to_column("id") %>%
+        left_join(as.data.frame(predTrainMat[[e]]) %>% rownames_to_column("id"), by = "id") %>%
+        column_to_rownames("id") %>%
+        as.matrix()
+      colnames(TrainMat)[[length(assay)+e]] <- paste0("ensembleSize_",e)
 
-      TestMat <- base::as.data.frame(TestMat) %>%
-        tibble::rownames_to_column("id") %>%
-        dplyr::left_join(base::as.data.frame(predMat[[e]]) %>%
-                           tibble::rownames_to_column("id"),
-                         by = "id") %>%
-        tibble::column_to_rownames("id") %>%
-        base::as.matrix()
-      base::colnames(TestMat)[[length(assay)+e]] <- base::paste0("ensembleSize_",e)
+      TestMat <- as.data.frame(TestMat) %>% rownames_to_column("id") %>%
+        left_join(as.data.frame(predMat[[e]]) %>% rownames_to_column("id"), by = "id") %>%
+        column_to_rownames("id") %>%
+        as.matrix()
+      colnames(TestMat)[[length(assay)+e]] <- paste0("ensembleSize_",e)
 
     }
 
@@ -884,13 +918,17 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, standardize = FALS
               predTrain.model.e = predTrain.model.e,
               predTrain.accuracy.e = predTrain.accuracy.e,
               pred.values.e = pred.values.e,
+              training.sets = training.sets,
+              negative.reference = negative.reference,
+              model.type = model.type,
               model.e = model.e,
               accuracy.e = accuracy.e,
               predMat = predMat,
               testMat = testMat,
               trainMat = train.mat,
               label = cls,
-              inclusion = inclusion,
+              inclusion = inclusion, ensembleSize = ensembleSize, sampling = sampling,
+              kernelType = kernelType, iter = iter, C = C, gamma = gamma, coef0 = coef0, degree = degree,
               top = top,
               seed = seed,
               system.time = Sys.time()))

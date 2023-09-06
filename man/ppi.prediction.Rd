@@ -2,12 +2,11 @@
 % Please edit documentation in R/ppi_prediction.R
 \name{ppi.prediction}
 \alias{ppi.prediction}
-\title{Function to use a support vector machine learning algorithm to classify quantitative protein-protein interaction data.}
+\title{Function to use a support vector or random forest machine learning algorithm or to classify quantitative protein-protein interaction data.}
 \usage{
 ppi.prediction(
   PPIdf = NULL,
   referenceSet = NULL,
-  standardize = FALSE,
   seed = 555,
   method.scaling = "robust.scaler",
   iter.scaler = TRUE,
@@ -16,11 +15,11 @@ ppi.prediction(
   negative.reference = c("RRS", "inter-complex"),
   assay = c("mean_cBRET", "mean_mCit"),
   all.configurations = TRUE,
-  sampling = "weighted",
+  sampling = NULL,
   weightBy = "mean_cBRET",
   weightHi = TRUE,
-  kernelType = "radial",
-  classificationType = "C-classification",
+  model.type = "svm",
+  kernelType = "linear",
   svm.parameters = FALSE,
   C = 100,
   gamma = NULL,
@@ -39,17 +38,15 @@ ppi.prediction(
 
 \item{referenceSet:}{reference PPI data set containing reference interactions used to train the svm models}
 
-\item{standardize:}{if TRUE, performs z-score normalization of the data}
-
-\item{seed:}{seed}
+\item{seed:}{set seed}
 
 \item{method.scaling:}{accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"}
 
 \item{iter.scaler:}{if TRUE and when using "robust.scaler" it iteratively performs robust scaler normalization until the IQR of each construct is within the IQR of all loaded data sets}
 
-\item{range:}{probs in stats::quantile(x, ...): numeric vector of probabilities}
+\item{range:}{IQR range used in "robust.scaler"}
 
-\item{data.scaling:}{speficies if the data of the first assay is scaled ("main") or if the data of all assays are scaled ("all")}
+\item{data.scaling:}{speficies which data provided under 'assay' is scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.}
 
 \item{negative.reference:}{string in the column "complex" to specify the negative/random interactions}
 
@@ -63,9 +60,9 @@ ppi.prediction(
 
 \item{weightHi:}{if TRUE weighted sampling uses preferentially higher values; if FALSE weighted sampling uses preferentially smaller values}
 
-\item{kernelType:}{the kernel used in training and predicting, see ?e1071::svm for details}
+\item{model.type:}{the machine learning algorithm used. Support are support vector machines: "svm" and random fores: "randomForest}
 
-\item{classificationType:}{currently C-classification for the svm function is supported; see ?e1071::svm for details}
+\item{kernelType:}{the kernel used in training and predicting, see ?e1071::svm for details}
 
 \item{svm.parameters:}{if TRUE, the best parameters (degree, gamma, coef0, cost) are calculated; if FALSE the parameters must be provided manually}
 
@@ -89,9 +86,17 @@ ppi.prediction(
 
 \item{verbose:}{give detailed information}
 }
+\value{
+A list containing the results from the machine learning prediction classes and the parameters used. Input for the learning.curve function.
+}
 \description{
-Function to use a support vector machine learning algorithm to classify quantitative protein-protein interaction data.
+Function to use a support vector or random forest machine learning algorithm or to classify quantitative protein-protein interaction data.
 }
 \examples{
-ppi.prediction()
+load('data/luthy_reference_sets.RData')
+example <- ppi.prediction(PPIdf = luthy_reference_sets, referenceSet = luthy_reference_sets,
+                          assay = c("mean_cBRET", "mean_mCit"), negative.reference = c("RRS"),
+                          model.type = "svm", ensembleSize = 50,
+                          sampling = 'weighted', weightBy = "mean_cBRET")
+
 }

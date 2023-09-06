@@ -32,6 +32,7 @@ usethis::use_package('Rmisc')
 #' @export
 #'
 #' @examples
+#'
 recovery.rate <- function(referenceSet = NULL,
                           PPIdf = NULL,
                           assay = "mean_cBRET",
