@@ -77,10 +77,7 @@ parameters that can to be specified.
 
 Please see the Vignette (under development) for a detailed description.
 
-## Application
-
-Development, benchmarking and example applications have been published
-here:
+## Reference
 
 <u>**AI-guided pipeline for protein-protein interaction drug discovery
 identifies a SARS-CoV-2 inhibitor**</u>

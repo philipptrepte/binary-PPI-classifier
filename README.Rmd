@@ -83,13 +83,7 @@ The function `recovery.rate()` is used to determine fixed cut-offs using a set o
 
 Please see the Vignette (under development) for a detailed description.
 
-```{r vignette, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=TRUE}
-
-```
-
-## Application
-
-Development, benchmarking and example applications have been published here:
+## Reference
 
 [**AI-guided pipeline for protein-protein interaction drug discovery identifies a SARS-CoV-2 inhibitor**]{.underline}
 

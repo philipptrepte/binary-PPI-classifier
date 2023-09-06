@@ -24,7 +24,7 @@ usethis::use_package('randomForest')
 #' @param negative.reference: string in the column "complex" to specify the negative/random interactions
 #' @param assay: assay parameters used for training
 #' @param all.configurations: if TRUE all orientations for each interactions are used; if FALSE only the highest scoring orientation for each interaction is used
-#' @param sampling: if TRUE weighted sampling is used when assembling the positive training sets
+#' @param sampling: use "weighted" or "unweighted" sampling to generate the independent training sets
 #' @param weightBy: assay parameter used for weighted sampling
 #' @param weightHi: if TRUE weighted sampling uses preferentially higher values; if FALSE weighted sampling uses preferentially smaller values
 #' @param model.type: the machine learning algorithm used. Support are support vector machines: "svm" and random fores: "randomForest
@@ -56,7 +56,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
                            iter.scaler = TRUE, range = c(0.25, 0.75), data.scaling = "main",
                            negative.reference = c("RRS", "inter-complex"),
                            assay = c("mean_cBRET", "mean_mCit"), all.configurations = TRUE,
-                           sampling = NULL, weightBy = "mean_cBRET", weightHi = TRUE,
+                           sampling = "weighted", weightBy = "mean_cBRET", weightHi = TRUE,
                            model.type = "svm", kernelType = "linear", svm.parameters = FALSE, C = 100, gamma = NULL, coef0 = 0, degree = 2,
                            ensembleSize = 50, top = NULL, inclusion = NULL, cs = "median", iter = 5, verbose = TRUE) {
 
@@ -717,8 +717,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
             "degree: ", degree, "\n")
   }
 
-  if(!is.null(sampling) && sampling != "weighted") {
-    stop("Invalid 'sampling'. Choose between 'NULL' or 'weighted'.")
+  if(sampling != "unweighted" && sampling != "weighted") {
+    stop("Invalid 'sampling'. Choose between 'unweighted' or 'weighted'.")
   }
   training.sets <- list()
   ensembleSize_total <- ensembleSize
@@ -726,7 +726,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
     counter = counter+1
     if(counter > 1) {
       weightBy <- NULL
-      sampling <- NULL
+      sampling <- "unweighted"
       ensembleSize <- 10
       base::message("Not all interactions have been predicted. Sampling repeated ", ensembleSize, " times. \n")
       ensembleSize_total <- ensembleSize_total+ensembleSize
@@ -764,7 +764,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
         if(is.null(weightBy)){
           weightBy <- assay[1]
         }
-        if(is.null(sampling)) {
+        if(sampling == "unweighted") {
           if(counter == 1) {
             prs.interactions <- referenceSet %>%
               filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
