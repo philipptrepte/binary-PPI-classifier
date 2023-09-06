@@ -69,7 +69,6 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
 
     model <- NULL
     pred.mat <- NULL
-    accuracy <- rep(NA, iter)
 
     for (i in seq_len(iter)) {
       tmp <- X
@@ -80,15 +79,13 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
       }
 
       if (model.type == "svm") {
-        model <- e1071::svm(Y ~ ., data = data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0, cross = 10)
+        model <- e1071::svm(Y ~ ., data = data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0)
         pred.train <- stats::predict(model, train.mat, decision.values = TRUE, probability = TRUE)
         pred.mat <- attr(pred.train, "probabilities")
-        accuracy[i] <- base::mean(pred.train == label)
       } else if (model.type == "randomforest") {
         model <- randomForest::randomForest(X, factor(Y))
         pred.train <- stats::predict(model, train.mat, type = "prob")
         pred.mat <- pred.train[,c(2,1)]
-        accuracy[i] <- base::mean(pred.train == label)
       } else {
         stop("Invalid model.type. Please choose 'svm' or 'randomforest'.")
       }
@@ -117,8 +114,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
       stop("Invalid model.type. Please choose 'svm' or 'randomforest'.")
     }
 
-
-    return(list(pred, pred.values, model, accuracy))
+    return(list(pred, pred.values, model))
   }
 
   `%ni%` <- Negate(`%in%`)
@@ -682,10 +678,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
   predTrainMat <- list()
   predTrain.values.e <- list()
   predTrain.model.e <- list()
-  predTrain.accuracy.e <- list()
   pred.values.e <- list()
   model.e <- list()
-  accuracy.e <- list()
   predMat <- list()
   TrainMat <- TrainTestMat
   TestMat <- testMat
@@ -861,12 +855,10 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
       predTrainMat[[e]] <- pred.reference[[1]][, 1]
       predTrain.values.e[[e]] <- pred.reference[[2]]
       predTrain.model.e[[e]] <- pred.reference[[3]]
-      predTrain.accuracy.e[[e]] <- pred.reference[[4]]
 
       predMat[[e]] <- pred.test[[1]][, 1]
       pred.values.e[[e]] <- pred.test[[2]]
       model.e[[e]] <- pred.test[[3]]
-      accuracy.e[[e]] <- pred.test[[4]]
 
       TrainMat <- as.data.frame(TrainMat) %>% rownames_to_column("id") %>%
         left_join(as.data.frame(predTrainMat[[e]]) %>% rownames_to_column("id"), by = "id") %>%
@@ -916,13 +908,11 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
               pred.test = pred.test,
               predTrain.values.e = predTrain.values.e,
               predTrain.model.e = predTrain.model.e,
-              predTrain.accuracy.e = predTrain.accuracy.e,
               pred.values.e = pred.values.e,
               training.sets = training.sets,
               negative.reference = negative.reference,
               model.type = model.type,
               model.e = model.e,
-              accuracy.e = accuracy.e,
               predMat = predMat,
               testMat = testMat,
               trainMat = train.mat,
