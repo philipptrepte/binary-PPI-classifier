@@ -155,7 +155,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
     stop("No user PPI test-dataset loaded: LuTHy reference set used as test set")
   }
   else {
-    base::message("User-defined PPI test-dataset loaded.")
+    base::message("User-defined PPI test-dataset provided.")
     PPIdf <- PPIdf %>%
       dplyr::filter(data %in% assay)
   }
@@ -749,14 +749,14 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
           top <- round(n.ppis, 0)
         }
         if(is.null(inclusion)) {
-          inclusion <- round(log(1-0.9999) / log(1-ensembleSize/top),0)
+          inclusion <- round(log(1-0.9999) / log(1-ensembleSize_total/top),0)
           if(inclusion < 30) {
             cat(paste0("minimum number of interactions to include are 30", "\n"))
             inclusion <- 30
           }
           if(inclusion > n.ppis*0.2) {
             inclusion <- round(n.ppis * 0.2, 0)
-            base::message(paste0("at ensembleSize = ", ensembleSize, ", the number of interactions in each training set is greater than 20% of the entire training set. Interactions to include was limited to 25% of the entire training set = ", inclusion, "\n"))
+            base::message(paste0("at ensembleSize = ", ensembleSize, ", the number of interactions in each training set is greater than 20% of the entire training set. Interactions to include was limited to 20% of the entire training set = ", inclusion, "\n"))
           }
         }
         if(is.null(weightBy)){
@@ -880,8 +880,9 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
 
   }
 
-  if(verbose)
+  if(verbose) {
     base::message(ensembleSize_total, " independent training sets assembled each consisting of ", inclusion, " randomly sampled interactions. Each training set was used to predict positive interactions in the test set through multi-adaptive sampling in ", iter, " iteration(s).")
+  }
 
   predTrainMat <- base::rowMeans(TrainMat[,-c(1:length(assay))], na.rm = TRUE)
   predMat <- base::rowMeans(TestMat[,-c(1:length(assay))], na.rm = TRUE)
@@ -921,6 +922,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
               testMat = testMat,
               trainMat = train.mat,
               label = cls,
+              cutoff = cutoff,
               inclusion = inclusion, ensembleSize = ensembleSize, sampling = sampling,
               kernelType = kernelType, iter = iter, C = C, gamma = gamma, coef0 = coef0, degree = degree,
               top = top,

@@ -15,13 +15,14 @@ usethis::use_package('ggpubr')
 #' @param ppi_prediction_result: result from the function ppi.prediction
 #' @param train_sizes: base::sequence of fraction of training sizes to be used for calculation from >0 to 1
 #' @param models: Integer of models used to calculate the loss functions. If "all" then all models as specified by the ensembleSize in ppi.prediction will be used.
+#' @param verbose: boolean, prints detailed informations
 #'
 #' @return
 #' @export
 #'
 #' @examples
 #'
-learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1, by = 0.1), models = "all") {
+learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1, by = 0.1), models = "all", verbose = TRUE) {
   #extract results from ppi.prediction function
   train_data = ppi_prediction_result$training.sets
   test_data = ppi_prediction_result$testMat
@@ -34,10 +35,10 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   }
   negative_reference = ppi_prediction_result$negative.reference
   if(models == "all") {
-    models = base::seq(ppi_prediction_result$model.e)
+    n.models = base::seq(ppi_prediction_result$model.e)
   }
   else if(is.double(models)) {
-    models = base::seq(round(models, 0))
+    n.models = base::seq(round(models, 0))
   }
   else if(is.double(models) | models == "all") {
     stop("'models' has to be an integer or 'all', referring to all models in the results from the ppi.prediction$model.e")
@@ -53,7 +54,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     hinge_loss <- base::ifelse(loss < 0, 0, loss)
     return(hinge_loss)
   }
-  multiAdaSampling <- function(train.mat, test.mat, label, model_type, kernelType = kernelType, iter = iter, cost = C, gamma = gamma, degree = degree, coef0 = coef0) {
+  multiAdaSampling <- function(train.mat, label, model_type, kernelType = kernelType, iter = iter, cost = C, gamma = gamma, degree = degree, coef0 = coef0) {
 
     X <- train.mat
     Y <- label
@@ -96,26 +97,15 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       base::colnames(X) <- base::colnames(train.mat)
     }
 
-    if(model_type == "svm") {
-      pred.values <- stats::predict(model, newdata = test.mat, decision.values = TRUE, probability = TRUE)
-      pred <- attr(pred.values, "probabilities")
-    } else if (model_type == "randomforest") {
-      pred.values <- stats::predict(model, newdata = test.mat, type = "prob")
-      pred <- pred.values[,c(2,1)]
-    } else {
-      stop("Invalid model_type. Please choose 'svm' or 'randomforest'.")
-    }
-
-
-    return(list(pred, pred.values, model))
+    return(model)
   }
 
-  train_performance <- base::matrix(0, nrow = length(train_sizes), ncol = length(models))  # Store training performance
-  test_performance <- base::matrix(0, nrow = length(train_sizes), ncol = length(models))  # Store test performance
-  train_loss <- base::matrix(0, nrow = length(train_sizes), ncol = length(models))  # Store training loss
-  test_loss <- base::matrix(0, nrow = length(train_sizes), ncol = length(models))  # Store test loss
-  train_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(models))  # Store training hinge
-  test_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(models))  # Store test hinge
+  train_performance <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store training performance
+  test_performance <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store test performance
+  train_loss <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store training loss
+  test_loss <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store test loss
+  train_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store training hinge
+  test_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store test hinge
 
   test_data <- base::as.data.frame(test_data) %>% tibble::rownames_to_column("sample") %>%
     tidyr::separate(col = "sample", into = c("complex", "interaction", "sample", "orientation"), sep = ";") %>%
@@ -123,12 +113,12 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
     tibble::column_to_rownames("sample")
 
-  for (i in seq_along(models)) {
+  for (i in seq_along(n.models)) {
     train_labels <- train_data[[i]] %>% tibble::as_tibble() %>% mutate("id" = base::rownames(train_data[[i]])) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
     train_labels <- as.integer(!base::grepl(paste(negative_reference, collapse = "|"), train_labels))
 
     for (j in seq_along(train_sizes)) {
-      if(j %% 10 == 0) {
+      if(j %% 10 == 0 & verbose == TRUE) {
         message(train_sizes[j]*100, "% training size for model ", i, " completed.")
       }
       size <- train_sizes[j]
@@ -139,27 +129,51 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       subset_indices <- c(subset_indices_prs, subset_indices_rrs)
       subset_train_data <- train_data[[i]][subset_indices, , drop = FALSE] %>% base::as.matrix()
       subset_train_labels <- train_labels[subset_indices]
-      test_data_subset <- subset(test_data, base::rownames(test_data) %ni% base::rownames(train_data[[i]])) %>% base::as.matrix()
+      test_data_subset <- subset(test_data, base::rownames(test_data) %ni% base::rownames(subset_train_data)) %>% base::as.matrix()
       test_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
       test_labels <- base::ifelse(test_labels == "PRS", 1, 0)
 
       # Make predictions on the training and test data using the trained model
       cls = base::as.factor(subset_train_labels+1)
       names(cls) <- base::rownames(subset_train_data)
-      model <- multiAdaSampling(train.mat = subset_train_data, test.mat = test_data_subset, model_type = ppi_prediction_result$model.type, label = cls, iter = ppi_prediction_result$iter,
+      model <- multiAdaSampling(train.mat = subset_train_data, model_type = ppi_prediction_result$model.type, label = cls, iter = ppi_prediction_result$iter,
                                 kernelType = ppi_prediction_result$kernelType, cost = ppi_prediction_result$C, degree = ppi_prediction_result$degree, gamma = ppi_prediction_result$gamma, coef0 = ppi_prediction_result$coef0)
-      train_predictions <- attr(stats::predict(model[[3]], subset_train_data, probability = TRUE), "probabilities")[,1]
-      test_predictions <- attr(stats::predict(model[[3]], test_data_subset, probability = TRUE), "probabilities")[,1]
-      train_predictions_lables <- base::ifelse(train_predictions>0.5, 1, 0)
-      test_predictions_lables <- base::ifelse(test_predictions>0.5, 1, 0)
+
+      if(ppi_prediction_result$model.type == "svm") {
+        train_predictions <- stats::predict(model, newdata = subset_train_data, decision.values = TRUE, probability = TRUE)
+        train_predictions <- attr(train_predictions, "probabilities")
+        train_predictions <- ifelse(train_predictions[,1] == 0, 1e-4, train_predictions[,1])
+        train_predictions <- ifelse(train_predictions == 1, 0.999, train_predictions)
+        train_predictions_lables <- ifelse(train_predictions > 0.5, 1, 0)
+
+        test_predictions <- stats::predict(model, newdata = test_data_subset, decision.values = TRUE, probability = TRUE)
+        test_predictions <- attr(test_predictions, "probabilities")
+        test_predictions <- ifelse(test_predictions[,1] == 0, 1e-4, test_predictions[,1])
+        test_predictions <- ifelse(test_predictions == 1, 0.999, test_predictions)
+        test_predictions_lables <- ifelse(test_predictions > 0.5, 1, 0)
+      }
+      else if (ppi_prediction_result$model.type == "randomforest") {
+        train_predictions <- stats::predict(model, newdata = subset_train_data, type = "prob")
+        train_predictions <- ifelse(train_predictions[,2] == 0, 1e-4, train_predictions[,2])
+        train_predictions <- ifelse(train_predictions == 1, 0.999, train_predictions)
+        train_predictions_lables <- ifelse(train_predictions > 0.5, 1, 0)
+
+        test_predictions <- stats::predict(model, newdata = test_data_subset, type = "prob")
+        test_predictions <- ifelse(test_predictions[,2] == 0, 1e-4, test_predictions[,2])
+        test_predictions <- ifelse(test_predictions == 1, 0.999, test_predictions)
+        test_predictions_lables <- ifelse(test_predictions > 0.5, 1, 0)
+      }
+      else {
+        stop("Invalid model.type. Please choose 'svm' or 'randomforest'.")
+      }
 
       # Calculate performance metrics accuracy
       train_perf <- base::mean(train_predictions_lables == subset_train_labels)
       test_perf <- base::mean(test_predictions_lables == test_labels)
 
       # Calculate 'Binary Cross-Entropy Loss' and 'Hinge loss'
-      train_loss_fold <- binary_cross_entropy_loss(train_predictions_lables, train_predictions) #-sum(fold_train_labels * log(train_predictions) + (1 - fold_train_labels) * log(1 - train_predictions))
-      test_loss_fold <- binary_cross_entropy_loss(test_predictions_lables, test_predictions) #-sum(fold_val_labels * log(val_predictions) + (1 - fold_val_labels) * log(1 - val_predictions))
+      train_loss_fold <- binary_cross_entropy_loss(subset_train_labels, train_predictions)
+      test_loss_fold <- binary_cross_entropy_loss(test_labels, test_predictions)
       train_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(subset_train_labels == 0, -1, subset_train_labels), predicted_labels = base::ifelse(train_predictions_lables == 0, -1, train_predictions_lables))
       test_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(test_labels == 0, -1, test_labels), predicted_labels = base::ifelse(test_predictions_lables == 0, -1, test_predictions_lables))
 
@@ -198,12 +212,17 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     ggplot2::geom_ribbon(aes(ymin = Ci25, ymax = Ci75), alpha = 0.15, linetype = "dotdash", size = 0.5) +
     ggplot2::geom_line(size = 1) +
     ggplot2::facet_wrap(. ~ Performance_Type, scales = "free", labeller = labeller(Performance_Type = c(Loss = "Binary Cross-Entropy Loss", Accuracy = "Accuracy", Hinge = "Hinge Loss"))) +
-    ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste0("Mean + IQR Learning Curves for the ", ensembleSize," SVM models (", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling), "sampling)")) +
+    ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste0("Mean + IQR Learning Curves for the ", ppi_prediction_result$ensembleSize, " ", ppi_prediction_result$model.type, " models."),
+                  subtitle = paste0("sampling: ", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling),
+                                    " | kernel type: ", ppi_prediction_result$kernelType,
+                                    " | cutoff: ", ppi_prediction_result$cutoff,
+                                    " | iterations: ", ppi_prediction_result$iter)) +
     ggplot2::scale_color_manual(values = c("Training" = "#6CA6C1", "Test" = "#D930C5")) +
     ggplot2::scale_fill_manual(values = c("Training" = "#6CA6C1", "Test" = "#D930C5")) +
     ggpubr::theme_pubr() +
     ggplot2::theme(text = element_text(family = "Avenir"),
           plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 8),
           axis.title = element_text(family = "Avenir Medium")) +
     ggplot2::scale_x_continuous(limits = c(0,NA), breaks = base::seq(0, 1, by=0.2))
 
