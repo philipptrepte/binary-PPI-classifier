@@ -174,8 +174,10 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       # Calculate 'Binary Cross-Entropy Loss' and 'Hinge loss'
       train_loss_fold <- binary_cross_entropy_loss(subset_train_labels, train_predictions)
       test_loss_fold <- binary_cross_entropy_loss(test_labels, test_predictions)
-      train_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(subset_train_labels == 0, -1, subset_train_labels), predicted_labels = base::ifelse(train_predictions_lables == 0, -1, train_predictions_lables))
-      test_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(test_labels == 0, -1, test_labels), predicted_labels = base::ifelse(test_predictions_lables == 0, -1, test_predictions_lables))
+      train_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(subset_train_labels == 0, -1, subset_train_labels),
+                                               predicted_labels = base::ifelse(train_predictions_lables == 0, -1, train_predictions_lables))
+      test_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(test_labels == 0, -1, test_labels),
+                                              predicted_labels = base::ifelse(test_predictions_lables == 0, -1, test_predictions_lables))
 
       # Store the performance metrics
       train_performance[j, i] <- train_perf

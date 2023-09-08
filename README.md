@@ -22,16 +22,11 @@ You can install the development version of binaryPPIclassifier from
 ``` r
 # install.packages("devtools")
 devtools::install_github("philipptrepte/binary-PPI-classifier")
+
+library(binaryPPIclassifier)
 ```
 
 ## Requirements
-
-``` r
-library(binaryPPIclassifier)
-
-#load example data
-load(file = "data/luthy_reference_sets.RData")
-```
 
 The reference set used for training the machine learning algorithm and
 the PPI data frame that it is applied to needs to have the following
@@ -49,7 +44,9 @@ and apply it to a test set PPI data set `PPIdf`. Please see
 `?ppi.prediction` for help on additional parameters that need to be
 specified.
 
-`YOUR_PREDICTION <- ppi.prediction(PPIdf = YOUR_TEST_SET, referenceSet = YOUR_TRAINING_SET)`
+``` r
+YOUR_PREDICTION <- ppi.prediction(PPIdf = YOUR_TEST_SET, referenceSet = YOUR_TRAINING_SET)
+```
 
 ### learning.curve()
 
@@ -58,7 +55,9 @@ accuracy, hinge loss and binary cross-entropy loss from the results of
 your `ppi.prediction()` result. Please see `?learning.curve` for help on
 additional parameters that can to be specified.
 
-`YOUR_LEARNING_CURVE <- learning.curve(ppi_prediction_result = YOUR_PREDICTION)`
+``` r
+YOUR_LEARNING_CURVE <- learning.curve(ppi_prediction_result = YOUR_PREDICTION) 
+```
 
 The results are saved in a list and the plot can be accessed using
 `YOUR_LEARNING_CURVE$learning_plot`
@@ -71,7 +70,9 @@ PPI data set `PPIdf` (optional) and the recovery rates are calculated
 for both data sets. Please see `?recovery.rate` for help on additional
 parameters that can to be specified.
 
-`YOUR_RECOVERY_RATE <- recovery.rate(PPIdf = YOUR_TEST_SET, referenceSet = YOUR_TRAINING_SET)`
+``` r
+YOUR_RECOVERY_RATE <- recovery.rate(PPIdf = YOUR_TEST_SET, referenceSet = YOUR_TRAINING_SET)
+```
 
 ## Vignette
 
