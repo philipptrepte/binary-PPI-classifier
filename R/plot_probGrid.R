@@ -68,7 +68,7 @@ plot.probGrid <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
     }
   }
 
-  if(length(ppi_prediction_result$assay == 1)) {
+  if(length(ppi_prediction_result$assay) == 1) {
     p <- ggplot() +
       geom_point(data = xgrid %>% cbind(ygrid) %>% cbind(ygrid.prob) %>% as.data.frame(),
                  mapping = aes(x = id,
