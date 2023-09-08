@@ -10,7 +10,9 @@
 #' @export
 #'
 #' @examples
-plot.probGrid <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim = NULL, ylim = NULL) {
+#'
+
+probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim = NULL, ylim = NULL) {
   if(ppi_prediction_result$model.type == "randomforest") {
     stop("Only available for ppi.prediction() results with 'svm' model")
   }

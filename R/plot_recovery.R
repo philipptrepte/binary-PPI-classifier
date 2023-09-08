@@ -6,7 +6,7 @@
 #' @export
 #'
 #' @examples
-plot.recovery <- function(ppi_prediction_result) {
+recovery.plot <- function(ppi_prediction_result) {
   ppi_prediction_result$predDf %>%
     dplyr::mutate(reference = ifelse(str_detect(complex, "inter-complex|RRS"), "RRS", "PRS")) %>%
     group_by(interaction, reference) %>%

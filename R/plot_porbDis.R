@@ -6,7 +6,7 @@
 #' @export
 #'
 #' @examples
-plot.probDis <- function(ppi_prediction_result) {
+probDis.plot <- function(ppi_prediction_result) {
   ppi_prediction_result$predDf %>%
     ggplot(aes(x = mean_cBRET, y = predMat, fill = complex)) +
     geom_point(shape = 21, alpha = 0.7, size = 1.5) +

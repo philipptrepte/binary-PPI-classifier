@@ -6,7 +6,8 @@
 #' @export
 #'
 #' @examples
-plot.roc <- function(ppi_prediction_result) {
+#'
+roc.plot <- function(ppi_prediction_result) {
   n.assays <- length(ppi_prediction_result$assay)
   prob.aggregated <- ppi_prediction_result$predDf %>%
     dplyr::mutate(D = ifelse(str_detect(complex, "inter-complex|RRS"), "0", "1")) %>%
