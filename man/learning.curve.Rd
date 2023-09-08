@@ -7,7 +7,8 @@
 learning.curve(
   ppi_prediction_result,
   train_sizes = base::seq(0.1, 1, by = 0.1),
-  models = "all"
+  models = "all",
+  verbose = TRUE
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ learning.curve(
 \item{train_sizes:}{base::sequence of fraction of training sizes to be used for calculation from >0 to 1}
 
 \item{models:}{Integer of models used to calculate the loss functions. If "all" then all models as specified by the ensembleSize in ppi.prediction will be used.}
+
+\item{verbose:}{boolean, prints detailed informations}
 }
 \description{
 Function to calculate and plot the accuracy, hinge loss and binary cross-entropy loss of a machine learning prediction using the ppi.prediction function.

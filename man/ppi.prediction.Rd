@@ -15,7 +15,7 @@ ppi.prediction(
   negative.reference = c("RRS", "inter-complex"),
   assay = c("mean_cBRET", "mean_mCit"),
   all.configurations = TRUE,
-  sampling = NULL,
+  sampling = "weighted",
   weightBy = "mean_cBRET",
   weightHi = TRUE,
   model.type = "svm",
@@ -28,7 +28,7 @@ ppi.prediction(
   ensembleSize = 50,
   top = NULL,
   inclusion = NULL,
-  cs = "median",
+  cutoff = "median",
   iter = 5,
   verbose = TRUE
 )
@@ -54,7 +54,7 @@ ppi.prediction(
 
 \item{all.configurations:}{if TRUE all orientations for each interactions are used; if FALSE only the highest scoring orientation for each interaction is used}
 
-\item{sampling:}{if TRUE weighted sampling is used when assembling the positive training sets}
+\item{sampling:}{use "weighted" or "unweighted" sampling to generate the independent training sets}
 
 \item{weightBy:}{assay parameter used for weighted sampling}
 
@@ -80,7 +80,7 @@ ppi.prediction(
 
 \item{inclusion:}{number of interactions to include during training of each model (>30); if NULL, number of interactions are calculated from the training sets assembled (ensembleSize) so that each interaction has been sampled with a 99.99\% probability.}
 
-\item{cs:}{sample interactions with quantitative scores above the specified 'cs' from the main assay}
+\item{cutoff:}{sample interactions with quantitative scores above the specified 'cutoff' from the main assay}
 
 \item{iter:}{number of iterations performed to reclassify the training set}
 
