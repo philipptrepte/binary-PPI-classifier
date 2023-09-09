@@ -1,0 +1,9 @@
+.Rproj.user
+inst/doc
+.Rbuildignore
+.Rhistory
+/doc/
+/Meta/
+.gitifnore
+.Rhistory
+.Rbuildignore
