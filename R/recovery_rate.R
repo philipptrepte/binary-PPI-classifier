@@ -28,11 +28,10 @@ usethis::use_package('Rmisc')
 #' @param complex.parameters: additional grouping parameters from which the recovery rates are calculated
 #' @param verbose: give detailed information
 #'
-#' @return
+#' @return a list with elements
 #' @export
 #'
 #' @examples
-#'
 recovery.rate <- function(referenceSet = NULL,
                           PPIdf = NULL,
                           assay = "mean_cBRET",
@@ -49,13 +48,7 @@ recovery.rate <- function(referenceSet = NULL,
 
   #use provided reference set data if needed
   if(is.null(referenceSet)) {
-    if(verbose)
-      base::message("No user reference set data provided. Published reference data from Trepte et al. is used.")
-    data("luthy_reference_set")
-
-    referenceSet <- luthy_reference_sets %>%
-      dplyr::filter(data %in% assay) %>%
-      dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, base::paste(negative.reference, collapse = "|")), "RRS", "PRS"))
+      stop("User must provide a reference data set.")
   }
 
   if(!any(stringr::str_detect(base::colnames(referenceSet), "data"))) {

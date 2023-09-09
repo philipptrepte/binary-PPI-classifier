@@ -7,13 +7,16 @@
 confusion.matrix(ppi_prediction_result)
 }
 \arguments{
-\item{ppi_prediction_result}{}
+\item{ppi_prediction_result:}{result object from the function ppi.prediction}
+}
+\value{
+a list with elements
 }
 \description{
 Function to calculate a confusion matrix for
 }
 \examples{
 data("example_ppi_prediction")
-confusion_matrix <- confusion.matrix(example_ppi_prediction)
+example_confusion_matrix <- confusion.matrix(example_ppi_prediction)
 
 }

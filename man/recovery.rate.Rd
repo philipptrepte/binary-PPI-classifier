@@ -47,6 +47,9 @@ recovery.rate(
 
 \item{verbose:}{give detailed information}
 }
+\value{
+a list with elements
+}
 \description{
 Function to calculate the recovery rate from binary PPI assays.
 }

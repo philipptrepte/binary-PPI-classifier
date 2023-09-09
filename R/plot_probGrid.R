@@ -1,43 +1,60 @@
+usethis::use_package('dplyr')
+usethis::use_package('ggplot2')
+usethis::use_package('ggpubr')
+usethis::use_package('rlang')
+usethis::use_package('stats')
+usethis::use_package('varhandle')
+usethis::use_package('ggnewscale')
+
 #' Plot a probability grid from the mean probabilities from the 'ensembleSize' number of models
 #'
-#' @param ppi_prediction_result
-#' @param n
-#' @param x.log.scale
-#' @param xlim
-#' @param ylim
+#' @import dplyr
+#' @import ggplot2
+#' @import ggpubr
+#' @import rlang
+#' @import stats
+#' @import varhandle
+#' @import ggnewscale
 #'
-#' @return
+#' @param ppi_prediction_result: result object from the ppi.prediction() function.
+#' @param n: grid size
+#' @param x.log.scale: boolean to log-scale x-axis values
+#' @param xlim: numeric values, specifying the left and right limit of the scale
+#' @param ylim: numeric values, specifying the bottom and top limit of the scale
+#'
+#' @return a ggplot2 object
 #' @export
 #'
 #' @examples
-#'
-
 probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim = NULL, ylim = NULL) {
   if(ppi_prediction_result$model.type == "randomforest") {
     stop("Only available for ppi.prediction() results with 'svm' model")
   }
+  lseq <- function(from=1, to=100000, length.out=6) {
+    exp(base::seq(log(from), log(to), length.out = length.out))
+  }
   make.grid <- function(ppi_prediction_result) {
     if(length(ppi_prediction_result$assay) > 2) {
-      message("ML algorithm was trained on more than 2 features. The grid will be generated for the first two features as specified under assay.")
+      base::message("ML algorithm was trained on more than 2 features. The grid will be generated for the first two features as specified under assay.")
     }
 
     if(length(ppi_prediction_result$assay) == 1) {
-      x <- cbind(ppi_prediction_result$testMat, row_number = 1:length(ppi_prediction_result$testMat))
+      x <- base::cbind(ppi_prediction_result$testMat, row_number = 1:length(ppi_prediction_result$testMat))
       x.log.scale <- FALSE
-      message("ML algorithm was trained on one feature. x-scale will be linear showing the number of interactions")
+      base::message("ML algorithm was trained on one feature. x-scale will be linear showing the number of interactions")
     } else if(length(ppi_prediction_result$assay) >= 2) {
       x <- ppi_prediction_result$testMat
     }
 
-    grange=apply(x,2,range)
+    grange <- base::apply(x,2,range)
 
-    x1=seq(from=grange[1,1],to=grange[2,1],length=n)
+    x1 <- base::seq(from=grange[1,1], to=grange[2,1], length=n)
     if(x.log.scale == TRUE) {
-      x2=lseq(from=grange[1,2],to=grange[2,2],length=n)
+      x2 <- lseq(from=grange[1,2], to=grange[2,2], length=n)
     } else if(x.log.scale == FALSE) {
-      x2=seq(from=grange[1,2],to=grange[2,2],length=n)
+      x2 <- base::seq(from=grange[1,2], to=grange[2,2], length=n)
     }
-    expand.grid(assay1 = x1, assay2 = x2)
+    base::expand.grid(assay1 = x1, assay2 = x2)
   }
 
   xgrid = make.grid(ppi_prediction_result)
@@ -45,50 +62,50 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
     x.log.scale <- FALSE
   }
   if(x.log.scale == TRUE) {
-    xgrid=cbind(xgrid[,1], log10(xgrid[,2]))
+    xgrid <- cbind(xgrid[,1], log(xgrid[,2]))
   }
   if(length(ppi_prediction_result$assay) == 1) {
-    colnames(xgrid) <- c((rlang::sym(ppi_prediction_result$assay[1])), "id")
+    base::colnames(xgrid) <- c(as.character(rlang::sym(ppi_prediction_result$assay[1])), "id")
   } else if(length(ppi_prediction_result$assay) >= 1){
-    colnames(xgrid) <- c((rlang::sym(ppi_prediction_result$assay[1])), (rlang::sym(ppi_prediction_result$assay[2])))
+    base::colnames(xgrid) <- c(as.character(rlang::sym(ppi_prediction_result$assay[1])), as.character(rlang::sym(ppi_prediction_result$assay[2])))
   }
 
-  for(i in seq(1, length(ppi_prediction_result$model.e))) {
+  for(i in base::seq(1, length(ppi_prediction_result$model.e))) {
     if(i == 1) {
-      ygrid <- data.frame(matrix(nrow = nrow(xgrid), ncol = 0))
-      ygrid.prob <- data.frame(matrix(nrow = nrow(xgrid), ncol = 0))
+      ygrid <- base::data.frame(base::matrix(nrow = base::nrow(xgrid), ncol = 0))
+      ygrid.prob <- base::data.frame(base::matrix(nrow = base::nrow(xgrid), ncol = 0))
     }
 
-    ygrid = cbind(ygrid, data.frame(predict(ppi_prediction_result$model.e[[i]], xgrid)))
-    ygrid.prob = cbind(ygrid.prob, attr(predict(ppi_prediction_result$model.e[[i]], xgrid, probability = TRUE), "probabilities")[,1])
+    ygrid = base::cbind(ygrid, data.frame(stats::predict(ppi_prediction_result$model.e[[i]], xgrid)))
+    ygrid.prob = base::cbind(ygrid.prob, attr(stats::predict(ppi_prediction_result$model.e[[i]], xgrid, probability = TRUE), "probabilities")[,1])
 
     if(i == length(ppi_prediction_result$model.e)) {
-      colnames(ygrid) <- seq(1:length(ppi_prediction_result$model.e))
-      colnames(ygrid.prob) <- seq(1:length(ppi_prediction_result$model.e))
-      ygrid <- rowMeans(varhandle::unfactor(ygrid))
-      ygrid.prob <- rowMeans(ygrid.prob)
+      colnames(ygrid) <- base::seq(1:length(ppi_prediction_result$model.e))
+      colnames(ygrid.prob) <- base::seq(1:length(ppi_prediction_result$model.e))
+      ygrid <- base::rowMeans(varhandle::unfactor(ygrid))
+      ygrid.prob <- base::rowMeans(ygrid.prob)
     }
   }
 
   if(length(ppi_prediction_result$assay) == 1) {
-    p <- ggplot() +
-      geom_point(data = xgrid %>% cbind(ygrid) %>% cbind(ygrid.prob) %>% as.data.frame(),
-                 mapping = aes(x = id,
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_point(data = xgrid %>% base::cbind(ygrid) %>% base::cbind(ygrid.prob) %>% base::as.data.frame(),
+                 mapping = ggplot2::aes(x = id,
                                y = !!rlang::sym(ppi_prediction_result$assay[1]), fill = ygrid.prob),
                  shape = 22, size = 1, stroke = 0) +
-      scale_fill_gradientn(colours = c("#FBF49C", "#ff6b6b", "#f7fff7", "#48C2C5"), limits = c(0,1)) +
-      labs(fill = "probability", size = "probability") +
-      new_scale("fill") +
-      geom_point(data = ppi_prediction_result$predDf %>%
-                   dplyr::mutate(id = row_number()),
-                 mapping = aes(x = id,
-                               y = !!rlang::sym(ppi_prediction_result$assay[1]),
-                               size = predMat, shape = complex, col = complex),
-                 fill = "white", stroke = 0.5, alpha = 1) +
-      scale_size_binned(range = c(0.01, 3.5), n.breaks = 4, limits = c(0.75, 1)) +
-      scale_shape_manual(values = c("RRS" = 23, "PRS" = 21)) +
-      scale_color_manual(values = c("RRS" = "#EC008C", "PRS" = "#00AEEF")) +
-      theme_pubr() +
+      ggplot2::scale_fill_gradientn(colours = c("#FBF49C", "#ff6b6b", "#f7fff7", "#48C2C5"), limits = c(0,1)) +
+      ggplot2::labs(fill = "probability", size = "probability") +
+      ggnewscale::new_scale("fill") +
+      ggplot2::geom_point(data = ppi_prediction_result$predDf %>%
+                            dplyr::mutate(id = dplyr::row_number()),
+                          mapping = ggplot2::aes(x = id,
+                                        y = !!rlang::sym(ppi_prediction_result$assay[1]),
+                                        size = predMat, shape = complex, col = complex),
+                          fill = "white", stroke = 0.5, alpha = 1) +
+      ggplot2::scale_size_binned(range = c(0.01, 3.5), n.breaks = 4, limits = c(0.75, 1)) +
+      ggplot2::scale_shape_manual(values = c("RRS" = 23, "PRS" = 21)) +
+      ggplot2::scale_color_manual(values = c("RRS" = "#EC008C", "PRS" = "#00AEEF")) +
+      ggpubr::theme_pubr() +
       ggplot2::theme(text = element_text(family = "Avenir"),
                      plot.title = element_text(size = 12),
                      plot.subtitle = element_text(size = 8),
@@ -96,29 +113,29 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
                      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
                      legend.position = "right")
   } else if(length(ppi_prediction_result$assay) >= 2) {
-    p <- ggplot() +
-      geom_point(data = xgrid %>% cbind(ygrid) %>% cbind(ygrid.prob) %>% as.data.frame(),
-                 mapping = aes(x = !!rlang::sym(ppi_prediction_result$assay[2]),
-                               y = !!rlang::sym(ppi_prediction_result$assay[1]), fill = ygrid.prob),
-                 shape = 22, size = 1, stroke = 0) +
-      scale_fill_gradientn(colours = c("#FBF49C", "#ff6b6b", "#f7fff7", "#48C2C5"), limits = c(0,1)) +
-      labs(fill = "probability", size = "probability") +
-      new_scale("fill") +
-      geom_point(data = ppi_prediction_result$predDf %>%
-                   filter(!is.na(!!rlang::sym(ppi_prediction_result$assay[2]))) %>%
-                   rowwise() %>%
-                   dplyr::mutate(!!rlang::sym(ppi_prediction_result$assay[2]) :=
-                                   ifelse(x.log.scale == TRUE,
-                                          log10(!!rlang::sym(ppi_prediction_result$assay[2])),
-                                          !!rlang::sym(ppi_prediction_result$assay[2]))),
-                 mapping = aes(x = !!rlang::sym(ppi_prediction_result$assay[2]),
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_point(data = xgrid %>% base::cbind(ygrid) %>% base::cbind(ygrid.prob) %>% base::as.data.frame(),
+                          mapping = ggplot2::aes(x = !!rlang::sym(ppi_prediction_result$assay[2]),
+                                        y = !!rlang::sym(ppi_prediction_result$assay[1]), fill = ygrid.prob),
+                          shape = 22, size = 1, stroke = 0) +
+      ggplot2::scale_fill_gradientn(colours = c("#FBF49C", "#ff6b6b", "#f7fff7", "#48C2C5"), limits = c(0,1)) +
+      ggplot2::labs(fill = "probability", size = "probability") +
+      ggnewscale::new_scale("fill") +
+      ggplot2::geom_point(data = ppi_prediction_result$predDf %>%
+                            filter(!is.na(!!rlang::sym(ppi_prediction_result$assay[2]))) %>%
+                            dplyr::rowwise() %>%
+                            dplyr::mutate(!!rlang::sym(ppi_prediction_result$assay[2]) :=
+                                            base::ifelse(x.log.scale == TRUE,
+                                                   log(!!rlang::sym(ppi_prediction_result$assay[2])),
+                                                   !!rlang::sym(ppi_prediction_result$assay[2]))),
+                          mapping = ggplot2::aes(x = !!rlang::sym(ppi_prediction_result$assay[2]),
                                y = !!rlang::sym(ppi_prediction_result$assay[1]),
                                size = predMat, shape = complex, col = complex),
                  fill = "white", stroke = 0.5, alpha = 1) +
-      scale_size_binned(range = c(0.01, 3.5), n.breaks = 4, limits = c(0.75, 1)) +
-      scale_shape_manual(values = c("RRS" = 23, "PRS" = 21)) +
-      scale_color_manual(values = c("RRS" = "#EC008C", "PRS" = "#00AEEF")) +
-      theme_pubr() +
+      ggplot2::scale_size_binned(range = c(0.01, 3.5), n.breaks = 4, limits = c(0.75, 1)) +
+      ggplot2::scale_shape_manual(values = c("RRS" = 23, "PRS" = 21)) +
+      ggplot2::scale_color_manual(values = c("RRS" = "#EC008C", "PRS" = "#00AEEF")) +
+      ggpubr::theme_pubr() +
       ggplot2::theme(text = element_text(family = "Avenir"),
                      plot.title = element_text(size = 12),
                      plot.subtitle = element_text(size = 8),
@@ -128,11 +145,11 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
   }
   if(!is.null(xlim)) {
     p <- p +
-      scale_x_continuous(limits = xlim)
+      ggplot2::scale_x_continuous(limits = xlim)
   }
   if(!is.null(ylim)) {
     p <- p +
-      scale_y_continuous(limits = ylim)
+      ggplot2::scale_y_continuous(limits = ylim)
   }
   p
 }

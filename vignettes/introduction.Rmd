@@ -18,20 +18,21 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
   fig.width = 6, 
-  fig.height = 4
+  fig.height = 4,
+  out.width = "100%"
 )
 ```
 
 ```{r requiredPackages, echo = FALSE, warning=FALSE, results="hide"}
 suppressPackageStartupMessages({
-  library(tidyverse)
-library(DT)
-library(ggpubr)
-library(viridis)
-library(binaryPPIclassifier)
-library(varhandle)
-library(ggnewscale)
-library(cowplot)
+  library(dplyr)
+  library(ggplot2)
+  library(ggpubr)
+  library(viridis)
+  library(binaryPPIclassifier)
+  library(varhandle)
+  library(ggnewscale)
+  library(cowplot)
 })
 
 ```
@@ -83,7 +84,7 @@ knitr::kable(luthy_reference_sets %>% select(-plate, -PPI) %>% filter(interactio
 ------------------------------------------------------------------------
 
 | Column name      | Description                                                                                                                                                                                   |
-|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|-----------------------------------------------------------|
 | Donor            | unique id to identify the donor construct                                                                                                                                                     |
 | Donor_tag        | indicates if the donor protein is tagged N-terminally ("**N**") or C-terminally ("**C**")                                                                                                     |
 | Donor_protein    | a protein identifier, e.g. BCL2L1                                                                                                                                                             |
@@ -102,7 +103,7 @@ knitr::kable(luthy_reference_sets %>% select(-plate, -PPI) %>% filter(interactio
 ## Example interaction: BAD + BCL2L1
 
 | Tagging configuration (`orientation` column) | Example (NL = NanoLuc; mCit = mCitrine) | interaction  | sample       |
-|----------------------------------------------|-----------------------------------------|--------------|--------------|
+|------------------------|---------------------|--------------|--------------|
 | C1-C2                                        | BAD-NL + BCL2L1-mCit                    | BAD + BCL2L1 | BAD + BCL2L1 |
 | C1-N2                                        | BAD-NL + mCit-BCL2L1                    | BAD + BCL2L1 | BAD + BCL2L1 |
 | N1-C2                                        | NL-BAD + BCL2L1-mCit                    | BAD + BCL2L1 | BAD + BCL2L1 |
@@ -150,6 +151,7 @@ The function `ppi.prediction` is used to predict the classification probability 
 
 In the following example, we use the `luthy_reference_set` example data to compile distinct training sets by sampling 50 times (`ensembleSize` = 50) from the entire `referenceSet` dataset. Weighted sampling is performed (`sampling` = "weighted") using the mean_cBRET data (`weightBy` = "mean_cBRET") from all interactions (`cutoff` = "all"). The data will not be further scaled (`method.scaling` = "none") and we specify that in the complex column the negative/random interactions are indicated by "RRS" (`negative.reference` = "RRS"). We further specify that as training features for the LuTHy-BRET the mean_cBRET and mean_mCit (`assay` = c("mean_cBRET", "mean_mCit") will be used to train the SVM algorithms (`model.type` = "svm"). For the SVM algorithm a linear kernel will be used (`kernelType` = "linear") with a cost of constraints violation of 100 (`C` = 100). During training, the class labels of the reference set are reclassified in 5 iterations (`iter` = 5)
 
+
 ``` r
 example_ppi_prediction <- ppi.prediction(PPIdf = luthy_reference_sets, 
                referenceSet = luthy_reference_sets,
@@ -166,10 +168,14 @@ example_ppi_prediction <- ppi.prediction(PPIdf = luthy_reference_sets,
                iter = 5)
 ```
 
+```{r loadExamplePPIprediction, echo=TRUE, message=FALSE, warning=FALSE}
+data("example_ppi_prediction")
+```
+
 The resulting list contains the following objects:
 
 | List object        | Description                                                                                                                                                     |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|--------------|----------------------------------------------------------|
 | predTrainDf        | Data frame of the training set containing the predicted classifier probabilities in the column `predTrainMat`                                                   |
 | predDf             | Data frame of the PPIdf test set containing the predicted classifier probabilities in the column `predMat`                                                      |
 | predTrain.model.e  | List for each `ensembleSize` as defined in `ppi.prediction()` containing the trained ML models used to predict the classification of the reference training set |
@@ -198,10 +204,13 @@ The resulting list contains the following objects:
 
 The package provides helper functions, to plot the results from the ML predictions (\@ref(fig:MLresultPlot)). `probGrid.plot` will generate a probability grid, `probDis.plot` will show the probability distribution against the first feature and a receiver operating characteristic curve can be plotted using the `roc.plot` function. Finally, the recovery rates at 50%, 75% and 95% can be plotted using the function `recovery.plot`.
 
-```{r MLresultPlot, echo=TRUE, message=FALSE, warning=FALSE, fig.height=7.5, fig.width=10, fig.cap="Training results as (A) probability grid, (B) probability distribtuoin, (C) ROC curve plotting the training features and the probability, (D) recovery rates at 50%, 75% and 95% probability"}
-data("example_ppi_prediction")
+```{r MLresultPlot, fig.cap="Training results as (A) probability grid; (B) probability distribtuoin; (C) ROC curve plotting the training features and the probability; (D) recovery rates at 50%, 75% and 95% probability", fig.height=7.5, fig.width=10, message=FALSE, warning=FALSE, echo=TRUE}
+
+
+
 cowplot::plot_grid(
-    probGrid.plot(example_ppi_prediction, ylim = c(-0.1, 0.8)),
+    NULL,
+    #probGrid.plot(example_ppi_prediction, ylim = c(-0.1, 0.8)),
     probDis.plot(example_ppi_prediction),
     roc.plot(example_ppi_prediction),
     recovery.plot(example_ppi_prediction),

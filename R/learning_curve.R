@@ -3,6 +3,8 @@ usethis::use_package('tibble')
 usethis::use_package('tidyr')
 usethis::use_package('ggplot2')
 usethis::use_package('ggpubr')
+usethis::use_package('cowplot')
+
 
 #' Function to calculate and plot the accuracy, hinge loss and binary cross-entropy loss of a machine learning prediction using the ppi.prediction function.
 #'
@@ -11,17 +13,17 @@ usethis::use_package('ggpubr')
 #' @import tidyr
 #' @import ggplot2
 #' @import ggpubr
+#' @import cowplot
 #'
 #' @param ppi_prediction_result: result from the function ppi.prediction
 #' @param train_sizes: base::sequence of fraction of training sizes to be used for calculation from >0 to 1
 #' @param models: Integer of models used to calculate the loss functions. If "all" then all models as specified by the ensembleSize in ppi.prediction will be used.
 #' @param verbose: boolean, prints detailed informations
 #'
-#' @return
+#' @return a list with elements
 #' @export
 #'
 #' @examples
-#'
 learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1, by = 0.1), models = "all", verbose = TRUE) {
   #extract results from ppi.prediction function
   train_data = ppi_prediction_result$training.sets

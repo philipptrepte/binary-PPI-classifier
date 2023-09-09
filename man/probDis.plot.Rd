@@ -7,7 +7,10 @@
 probDis.plot(ppi_prediction_result)
 }
 \arguments{
-\item{ppi_prediction_result}{}
+\item{ppi_prediction_result:}{result object from the ppi.prediction() function.}
+}
+\value{
+a ggplot2 object
 }
 \description{
 Plot a scatter plot of the probability distribution against the primary assay feature

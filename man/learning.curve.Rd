@@ -20,6 +20,9 @@ learning.curve(
 
 \item{verbose:}{boolean, prints detailed informations}
 }
+\value{
+a list with elements
+}
 \description{
 Function to calculate and plot the accuracy, hinge loss and binary cross-entropy loss of a machine learning prediction using the ppi.prediction function.
 }

@@ -87,16 +87,8 @@ ppi.prediction(
 \item{verbose:}{give detailed information}
 }
 \value{
-A list containing the results from the machine learning prediction classes and the parameters used. Input for the learning.curve function.
+A list with elements containing the results from the machine learning prediction classes and the parameters used.
 }
 \description{
 Function to use a support vector or random forest machine learning algorithm or to classify quantitative protein-protein interaction data.
-}
-\examples{
-load('data/luthy_reference_sets.RData')
-example <- ppi.prediction(PPIdf = luthy_reference_sets, referenceSet = luthy_reference_sets,
-                          assay = c("mean_cBRET", "mean_mCit"), negative.reference = c("RRS"),
-                          model.type = "svm", ensembleSize = 50,
-                          sampling = 'weighted', weightBy = "mean_cBRET")
-
 }

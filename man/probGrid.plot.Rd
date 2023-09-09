@@ -13,7 +13,18 @@ probGrid.plot(
 )
 }
 \arguments{
-\item{ylim}{}
+\item{ppi_prediction_result:}{result object from the ppi.prediction() function.}
+
+\item{n:}{grid size}
+
+\item{x.log.scale:}{boolean to log-scale x-axis values}
+
+\item{xlim:}{numeric values, specifying the left and right limit of the scale}
+
+\item{ylim:}{numeric values, specifying the bottom and top limit of the scale}
+}
+\value{
+a ggplot2 object
 }
 \description{
 Plot a probability grid from the mean probabilities from the 'ensembleSize' number of models

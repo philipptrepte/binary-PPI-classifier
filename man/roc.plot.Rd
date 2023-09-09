@@ -7,7 +7,10 @@
 roc.plot(ppi_prediction_result)
 }
 \arguments{
-\item{ppi_prediction_result}{}
+\item{ppi_prediction_result:}{result object from the ppi.prediction() function.}
+}
+\value{
+a ggplot2 object
 }
 \description{
 Plot ROC curve of the predicted probabilities against the assay features the ML was trained on

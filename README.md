@@ -76,7 +76,8 @@ YOUR_RECOVERY_RATE <- recovery.rate(PPIdf = YOUR_TEST_SET, referenceSet = YOUR_T
 
 ## Vignette
 
-Please see the Vignette (under development) for a detailed description.
+Please see the Vignette (under development) for a detailed description
+under `/doc/introduction.html`
 
 ## Reference
 
