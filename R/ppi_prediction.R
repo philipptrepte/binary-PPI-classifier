@@ -1,10 +1,3 @@
-usethis::use_package('dplyr')
-usethis::use_package('tidyr')
-usethis::use_package('tibble')
-usethis::use_package('stringr')
-usethis::use_package('e1071')
-usethis::use_package('randomForest')
-
 #' Function to use a support vector or random forest machine learning algorithm or to classify quantitative protein-protein interaction data.
 #'
 #' @import dplyr
@@ -264,7 +257,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
       referenceSet <- referenceSet %>%
         dplyr::filter(data %in% assay) %>%
         tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-        dplyr::left_join(orientation.cf %>% dplyr::select(orientation, cf), by = "orientation") %>%
+        dplyr::left_join(orientation.cf %>%
+                           dplyr::select(orientation, cf), by = "orientation") %>%
         dplyr::mutate(!!(rlang::sym(i)) := !!(rlang::sym(i)) - cf, .keep = "unused") %>%
         tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
     }
@@ -574,9 +568,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
                 tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
                 dplyr::group_by(construct = Acceptor) %>%
                 dplyr::summarise(median = stats::median(!!(rlang::sym(j)), na.rm = TRUE),
-                                 IQR = IQR.custom(!!(rlang::sym(j)), na.rm = TRUE, range = range))
-            ) %>%
-            mutate(scaler.IQR = base::ifelse(round(IQR, 4) > round(IQR.global[[j]],4), TRUE, FALSE),
+                                 IQR = IQR.custom(!!(rlang::sym(j)), na.rm = TRUE, range = range))) %>%
+            dplyr::mutate(scaler.IQR = base::ifelse(round(IQR, 4) > round(IQR.global[[j]],4), TRUE, FALSE),
                    scaler.median = base::ifelse(round(median, 4) > round(scaler.global[[j]],4), TRUE, FALSE))
 
           if(iter.scaler == TRUE) {
@@ -729,15 +722,15 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
             message(e, ".")
           }
         if(cutoff == "median") {
-          cs <- median(referenceSet %>% filter(data == assay[1]) %>% pull(score), na.rm = TRUE)
+          cs <- stats::median(referenceSet %>% dplyr::filter(data == assay[1]) %>% dplyr::pull(score), na.rm = TRUE)
         }
 
         if(cutoff == "all") {
-          cs <- min(referenceSet %>% filter(data == assay[1]) %>% pull(score), na.rm = TRUE)
+          cs <- min(referenceSet %>% dplyr::filter(data == assay[1]) %>% dplyr::pull(score), na.rm = TRUE)
         }
 
         n.ppis <- referenceSet %>%
-          filter(data == assay[1] & score > cs) %>% nrow()
+          dplyr::filter(data == assay[1] & score > cs) %>% base::nrow()
 
         if(is.null(top)) {
           top <- round(n.ppis, 0)
@@ -780,68 +773,72 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
             prs.interactions <- referenceSet %>%
               dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
               dplyr::slice_max(n = top, order_by = score) %>%
-              dplyr::slice_sample(n = inclusion, weight_by = score + abs(min(referenceSet %>% dplyr::filter(data == weightBy) %>% dplyr::pull(score), na.rm = TRUE)) + 1e-5) %>%
+              dplyr::slice_sample(n = inclusion, weight_by = score + abs(min(referenceSet %>%
+                                                                               dplyr::filter(data == weightBy) %>%
+                                                                               dplyr::pull(score), na.rm = TRUE)) + 1e-5) %>%
               dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
           }
           if(weightHi == FALSE) {
             prs.interactions <- referenceSet %>%
-              filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
-              slice_min(n = top, order_by = score) %>%
-              slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>% filter(data == weightBy) %>% pull(score), na.rm = TRUE)) + 1e-5) %>%
+              dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+              dplyr::slice_min(n = top, order_by = score) %>%
+              dplyr::slice_sample(n = inclusion, weight_by = score+abs(min(referenceSet %>%
+                                                                             dplyr::filter(data == weightBy) %>%
+                                                                             dplyr::pull(score), na.rm = TRUE)) + 1e-5) %>%
               dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
           }
         }
 
         rrs.interactions <- referenceSet %>%
-          filter(data == weightBy & !is.na(score) & reference == "RRS") %>%
+          dplyr::filter(data == weightBy & !is.na(score) & reference == "RRS") %>%
           dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference) %>%
-          anti_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
-          slice_sample(n = nrow(prs.interactions))
+          dplyr::anti_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
+          dplyr::slice_sample(n = nrow(prs.interactions))
         }
 
       if(ensembleSize == 1) {
         prs.interactions <- referenceSet %>%
-          filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
+          dplyr::filter(data == weightBy & !is.na(score) & reference == "PRS") %>%
           dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference)
 
         rrs.interactions <- referenceSet %>%
-          filter(data == weightBy & !is.na(score) & reference == "RRS") %>%
+          dplyr::filter(data == weightBy & !is.na(score) & reference == "RRS") %>%
           dplyr::select(Donor, Donor_tag, Donor_protein, Acceptor, Acceptor_protein, Acceptor_tag, orientation, complex, reference) %>%
-          anti_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference"))
+          dplyr::anti_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference"))
         }
 
       positive.train <- referenceSet %>%
-        filter(data %in% assay) %>%
-        inner_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
-        pivot_wider(names_from = "data", values_from = "score") %>%
-        unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
-        column_to_rownames("sample") %>%
+        dplyr::filter(data %in% assay) %>%
+        dplyr::inner_join(prs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
+        tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
+        tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
+        tibble::column_to_rownames("sample") %>%
         dplyr::select(assay) %>%
-        filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
-        as.matrix()
-      positive.cls <- rep(2, nrow(positive.train))
+        dplyr::filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
+        base::as.matrix()
+      positive.cls <- rep(2, base::nrow(positive.train))
 
       negative.train <- referenceSet %>%
-        filter(data %in% assay) %>%
-        inner_join(rrs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
-        unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
-        pivot_wider(names_from = data, values_from = score) %>%
-        column_to_rownames("sample") %>%
+        dplyr::filter(data %in% assay) %>%
+        dplyr::inner_join(rrs.interactions, by = c("Donor", "Donor_tag", "Donor_protein", "Acceptor", "Acceptor_protein", "Acceptor_tag", "orientation", "complex", "reference")) %>%
+        tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
+        tidyr::pivot_wider(names_from = data, values_from = score) %>%
+        tibble::column_to_rownames("sample") %>%
         dplyr::select(assay) %>%
-        filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
-        as.matrix()
+        dplyr::filter(across(.cols = assay, .fns = function(x) !is.na(x))) %>%
+        base::as.matrix()
       negative.cls <- rep(1, nrow(negative.train))
 
-      train.mat <- rbind(positive.train, negative.train)
+      train.mat <- base::rbind(positive.train, negative.train)
       training.sets[[e]] <- train.mat
-      cls <- as.factor(c(positive.cls, negative.cls))
+      cls <- base::as.factor(c(positive.cls, negative.cls))
       names(cls) <- rownames(train.mat)
 
-      train.ppis <- as.data.frame(train.mat) %>% rownames_to_column("sample") %>%
-        separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
+      train.ppis <- base::as.data.frame(train.mat) %>% tibble::rownames_to_column("sample") %>%
+        tidyr::separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
         dplyr::select(-reference) %>%
-        unite(complex, interaction, sample, orientation, col = "sample", sep = ";") %>%
-        pull(sample)
+        tidyr::unite(complex, interaction, sample, orientation, col = "sample", sep = ";") %>%
+        dplyr::pull(sample)
 
 
       #predict positive interactions based on the training sets; also test performance on the reference set
@@ -858,17 +855,17 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
       pred.values.e[[e]] <- pred.test[[2]]
       model.e[[e]] <- pred.test[[3]]
 
-      TrainMat <- as.data.frame(TrainMat) %>% rownames_to_column("id") %>%
-        left_join(as.data.frame(predTrainMat[[e]]) %>% rownames_to_column("id"), by = "id") %>%
-        column_to_rownames("id") %>%
-        as.matrix()
-      colnames(TrainMat)[[length(assay)+e]] <- paste0("ensembleSize_",e)
+      TrainMat <- base::as.data.frame(TrainMat) %>% tibble::rownames_to_column("id") %>%
+        dplyr::left_join(base::as.data.frame(predTrainMat[[e]]) %>% tibble::rownames_to_column("id"), by = "id") %>%
+        tibble::column_to_rownames("id") %>%
+        base::as.matrix()
+      base::colnames(TrainMat)[[length(assay)+e]] <- base::paste0("ensembleSize_",e)
 
-      TestMat <- as.data.frame(TestMat) %>% rownames_to_column("id") %>%
-        left_join(as.data.frame(predMat[[e]]) %>% rownames_to_column("id"), by = "id") %>%
-        column_to_rownames("id") %>%
-        as.matrix()
-      colnames(TestMat)[[length(assay)+e]] <- paste0("ensembleSize_",e)
+      TestMat <- base::as.data.frame(TestMat) %>% tibble::rownames_to_column("id") %>%
+        dplyr::left_join(base::as.data.frame(predMat[[e]]) %>% tibble::rownames_to_column("id"), by = "id") %>%
+        tibble::column_to_rownames("id") %>%
+        base::as.matrix()
+      base::colnames(TestMat)[[length(assay)+e]] <- base::paste0("ensembleSize_",e)
 
     }
 
@@ -880,8 +877,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
 
   predTrainMat <- base::rowMeans(TrainMat[,-c(1:length(assay))], na.rm = TRUE)
   predMat <- base::rowMeans(TestMat[,-c(1:length(assay))], na.rm = TRUE)
-  TrainMatCount <- cbind(TrainMat[,c(1:length(assay))], base::rowSums(!is.na(TrainMat[,-c(1:length(assay))]), na.rm = TRUE), predTrainMat)
-  TestMatCount <- cbind(TestMat[,c(1:length(assay))], base::rowSums(!is.na(TestMat[,-c(1:length(assay))]), na.rm = TRUE), predMat)
+  TrainMatCount <- base::cbind(TrainMat[,c(1:length(assay))], base::rowSums(!is.na(TrainMat[,-c(1:length(assay))]), na.rm = TRUE), predTrainMat)
+  TestMatCount <- base::cbind(TestMat[,c(1:length(assay))], base::rowSums(!is.na(TestMat[,-c(1:length(assay))]), na.rm = TRUE), predMat)
 
   #save probability score for train and test data together with the respective input data
   predTrainDf <- base::data.frame(predTrainMat) %>%

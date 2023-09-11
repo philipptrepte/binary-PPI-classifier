@@ -1,11 +1,3 @@
-usethis::use_package('dplyr')
-usethis::use_package('ggplot2')
-usethis::use_package('ggpubr')
-usethis::use_package('rlang')
-usethis::use_package('stats')
-usethis::use_package('varhandle')
-usethis::use_package('ggnewscale')
-
 #' Plot a probability grid from the mean probabilities from the 'ensembleSize' number of models
 #'
 #' @import dplyr
@@ -30,9 +22,11 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
   if(ppi_prediction_result$model.type == "randomforest") {
     stop("Only available for ppi.prediction() results with 'svm' model")
   }
+
   lseq <- function(from=1, to=100000, length.out=6) {
     exp(base::seq(log(from), log(to), length.out = length.out))
   }
+
   make.grid <- function(ppi_prediction_result) {
     if(length(ppi_prediction_result$assay) > 2) {
       base::message("ML algorithm was trained on more than 2 features. The grid will be generated for the first two features as specified under assay.")
@@ -122,12 +116,12 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
       ggplot2::labs(fill = "probability", size = "probability") +
       ggnewscale::new_scale("fill") +
       ggplot2::geom_point(data = ppi_prediction_result$predDf %>%
-                            filter(!is.na(!!rlang::sym(ppi_prediction_result$assay[2]))) %>%
+                            dplyr::filter(!is.na(!!rlang::sym(ppi_prediction_result$assay[2]))) %>%
                             dplyr::rowwise() %>%
-                            dplyr::mutate(!!rlang::sym(ppi_prediction_result$assay[2]) :=
+                            dplyr::mutate((!!rlang::sym(ppi_prediction_result$assay[2])) :=
                                             base::ifelse(x.log.scale == TRUE,
                                                    log(!!rlang::sym(ppi_prediction_result$assay[2])),
-                                                   !!rlang::sym(ppi_prediction_result$assay[2]))),
+                                                   (!!rlang::sym(ppi_prediction_result$assay[2])))),
                           mapping = ggplot2::aes(x = !!rlang::sym(ppi_prediction_result$assay[2]),
                                y = !!rlang::sym(ppi_prediction_result$assay[1]),
                                size = predMat, shape = complex, col = complex),

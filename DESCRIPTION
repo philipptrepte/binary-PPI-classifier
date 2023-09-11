@@ -1,6 +1,6 @@
 Package: binaryPPIclassifier
 Title: Function to use machine learning algorithms to classify quantitative protein-protein interaction data
-Version: 1.5.2.0
+Version: 1.5.2.1
 Authors@R: 
     person("Philipp", "Trepte", , "philipp.trepte@imba.oeaw.ac.at", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8141-6272"))
@@ -16,7 +16,6 @@ Depends:
     caret,
     cowplot,
     DescTools,
-    dplyr,
     e1071,
     ggnewscale,
     ggplot2,
@@ -32,9 +31,12 @@ Depends:
     tidyr,
     usethis,
     varhandle,
-    viridis
+    viridis,
+    dplyr
 Suggests: 
     knitr,
     rmarkdown,
-    BiocStyle
+    BiocStyle,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
+Config/testthat/edition: 3

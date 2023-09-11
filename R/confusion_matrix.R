@@ -1,6 +1,3 @@
-usethis::use_package('dplyr')
-usethis::use_package('caret')
-
 #' Function to calculate a confusion matrix for
 #'
 #' @import dplyr

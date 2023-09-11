@@ -9,13 +9,14 @@ knitr::opts_chunk$set(
 
 ## ----requiredPackages, echo = FALSE, warning=FALSE, results="hide"------------
 suppressPackageStartupMessages({
-library(tidyverse)
-library(ggpubr)
-library(viridis)
-library(binaryPPIclassifier)
-library(varhandle)
-library(ggnewscale)
-library(cowplot)
+  library(dplyr)
+  library(ggplot2)
+  library(ggpubr)
+  library(viridis)
+  library(binaryPPIclassifier)
+  library(varhandle)
+  library(ggnewscale)
+  library(cowplot)
 })
 
 
@@ -49,13 +50,15 @@ data("example_ppi_prediction")
 
 ## ----MLresultPlot, fig.cap="Training results as (A) probability grid; (B) probability distribtuoin; (C) ROC curve plotting the training features and the probability; (D) recovery rates at 50%, 75% and 95% probability", fig.height=7.5, fig.width=10, message=FALSE, warning=FALSE, echo=TRUE----
 
-#cowplot::plot_grid(
-#    probGrid.plot(example_ppi_prediction, ylim = c(-0.1, 0.8)),
-#    probDis.plot(example_ppi_prediction),
-#    roc.plot(example_ppi_prediction),
-#    recovery.plot(example_ppi_prediction),
-#  ncol = 2, align = "hv", axis = "tlrb", labels = "AUTO"
-#)
+
+
+cowplot::plot_grid(
+    probGrid.plot(example_ppi_prediction, ylim = c(-0.1, 0.8)),
+    probDis.plot(example_ppi_prediction),
+    roc.plot(example_ppi_prediction),
+    recovery.plot(example_ppi_prediction),
+  ncol = 2, align = "hv", axis = "tlrb", labels = "AUTO"
+)
 
 
 ## ----exampleConfMat, echo=TRUE, message=FALSE, warning=FALSE------------------

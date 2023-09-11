@@ -1,11 +1,3 @@
-usethis::use_package('dplyr')
-usethis::use_package('tibble')
-usethis::use_package('tidyr')
-usethis::use_package('ggplot2')
-usethis::use_package('ggpubr')
-usethis::use_package('cowplot')
-
-
 #' Function to calculate and plot the accuracy, hinge loss and binary cross-entropy loss of a machine learning prediction using the ppi.prediction function.
 #'
 #' @import dplyr

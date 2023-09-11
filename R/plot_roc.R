@@ -1,12 +1,3 @@
-usethis::use_package('dplyr')
-usethis::use_package('ggplot2')
-usethis::use_package('stringr')
-usethis::use_package('ggpubr')
-usethis::use_package('plotROC')
-usethis::use_package('DescTools')
-usethis::use_package('viridis')
-usethis::use_package('purrr')
-
 #' Plot ROC curve of the predicted probabilities against the assay features the ML was trained on
 #'
 #' @import dplyr

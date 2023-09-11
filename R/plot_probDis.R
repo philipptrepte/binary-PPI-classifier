@@ -1,7 +1,3 @@
-usethis::use_package('dplyr')
-usethis::use_package('ggplot2')
-usethis::use_package('ggpubr')
-
 #' Plot a scatter plot of the probability distribution against the primary assay feature
 #'
 #' @import dplyr

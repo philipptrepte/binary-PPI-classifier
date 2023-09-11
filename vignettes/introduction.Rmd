@@ -209,8 +209,7 @@ The package provides helper functions, to plot the results from the ML predictio
 
 
 cowplot::plot_grid(
-    NULL,
-    #probGrid.plot(example_ppi_prediction, ylim = c(-0.1, 0.8)),
+    probGrid.plot(example_ppi_prediction, ylim = c(-0.1, 0.8)),
     probDis.plot(example_ppi_prediction),
     roc.plot(example_ppi_prediction),
     recovery.plot(example_ppi_prediction),

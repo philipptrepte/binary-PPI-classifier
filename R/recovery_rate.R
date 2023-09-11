@@ -1,14 +1,7 @@
-usethis::use_package('dplyr')
-usethis::use_package('tidyr')
-usethis::use_package('tibble')
-usethis::use_package('stringr')
-usethis::use_package('rlang')
-usethis::use_package('Rmisc')
-
 #' Function to calculate the recovery rate from binary PPI assays.
 #'
-#' @import dplyr
 #' @import tidyr
+#' @import dplyr
 #' @import tibble
 #' @import stringr
 #' @import rlang

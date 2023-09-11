@@ -1,8 +1,3 @@
-usethis::use_package('dplyr')
-usethis::use_package('ggplot2')
-usethis::use_package('stringr')
-usethis::use_package('ggpubr')
-
 #' Plot a bar diagram of the recovery rates at 50%, 75% and 95% probability
 #'
 #' @import dplyr
