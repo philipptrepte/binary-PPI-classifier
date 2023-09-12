@@ -24,7 +24,7 @@ recovery.plot <- function(ppi_prediction_result) {
                      recovery = pos / total * 100,
                      sep = sqrt(recovery*(100-recovery)/total)) %>%
     rbind(
-      example_ppi_prediction$predDf %>%
+      ppi_prediction_result$predDf %>%
         dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, "inter-complex|RRS"), "RRS", "PRS")) %>%
         dplyr::group_by(interaction, reference) %>%
         dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%
@@ -37,7 +37,7 @@ recovery.plot <- function(ppi_prediction_result) {
                          sep = sqrt(recovery*(100-recovery)/total))
     ) %>%
     rbind(
-      example_ppi_prediction$predDf %>%
+      ppi_prediction_result$predDf %>%
         dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, "inter-complex|RRS"), "RRS", "PRS")) %>%
         dplyr::group_by(interaction, reference) %>%
         dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%
@@ -56,6 +56,11 @@ recovery.plot <- function(ppi_prediction_result) {
     ggplot2::ylim(0, 100) +
     ggplot2::scale_fill_manual(values = c("#6CA6C1", "#D930C5")) +
     ggplot2::facet_wrap(~ probability, ncol = 3) +
+    ggplot2::labs(x = "", y = "Value", title = paste0("Mean + IQR Learning Curves for the ", ppi_prediction_result$ensembleSize, " ", ppi_prediction_result$model.type, " models"),
+                  subtitle = paste0("sampling: ", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling),
+                                    if(ppi_prediction_result$model.type == "svm") paste0(" | kernel type: ", ppi_prediction_result$kernelType),
+                                    " | cutoff: ", ppi_prediction_result$cutoff,
+                                    " | iterations: ", ppi_prediction_result$iter)) +
     ggpubr::theme_pubr() +
     ggplot2::theme(text = element_text(family = "Avenir"),
                    plot.title = element_text(size = 12),
