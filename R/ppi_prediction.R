@@ -752,14 +752,13 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
           } else {
             inclusion <- round(log(1-0.9999) / log(1-ensembleSize_total/top),0)
           }
-
-          if(inclusion < 30) {
-            cat(paste0("minimum number of interactions to include are 30", "\n"))
-            inclusion <- 30
-          }
           if(inclusion > n.ppis*0.2) {
             inclusion <- round(n.ppis * 0.2, 0)
             base::message(paste0("at ensembleSize = ", ensembleSize, ", the number of interactions in each training set is greater than 20% of the entire training set. Interactions to include was limited to 20% of the entire training set = ", inclusion, "\n"))
+          }
+          if(inclusion < 30 & n.ppis > 30) {
+            cat(paste0("minimum number of interactions to include are 30", "\n"))
+            inclusion <- 30
           }
         }
         if(is.null(weightBy)){
