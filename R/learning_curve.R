@@ -30,11 +30,9 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   negative_reference = ppi_prediction_result$negative.reference
   if(models == "all") {
     n.models = base::seq(ppi_prediction_result$model.e)
-  }
-  else if(is.double(models)) {
+  } else if(is.double(models)) {
     n.models = base::seq(round(models, 0))
-  }
-  else if(is.double(models) | models == "all") {
+  } else if(is.double(models) | models == "all") {
     stop("'models' has to be an integer or 'all', referring to all models in the results from the ppi.prediction$model.e")
   }
 
@@ -116,6 +114,12 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
         message(train_sizes[j]*100, "% training size for model ", i, " completed.")
       }
       size <- train_sizes[j]
+      if(round(size * length(train_labels[train_labels == 1])) == 1){
+        if(verbose == TRUE) {
+          message(paste0("at ", train_sizes[j]*100, "% of the training set, the training subset with only one interaction is to small. Training will continue with ", train_sizes[j+1]*100, "% of training set."))
+        }
+        next()
+      }
 
       # Select a subset of the training data
       subset_indices_prs <- base::sample(which(train_labels == 1), size = round(size * length(train_labels[train_labels == 1])))

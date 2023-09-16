@@ -110,8 +110,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
   #check reference set training set
   if(is.null(referenceSet)) {
     stop("User must provide a reference data set.")
-    }
-  else {
+    } else {
     base::message("User defined-reference set provided.")
     referenceSet <- referenceSet %>%
       dplyr::filter(data %in% assay) %>%
@@ -140,8 +139,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
   #check PPI test set
   if(is.null(PPIdf)) {
     stop("No user PPI test-dataset loaded: LuTHy reference set used as test set")
-  }
-  else {
+  } else {
     base::message("User-defined PPI test-dataset provided.")
     PPIdf <- PPIdf %>%
       dplyr::filter(data %in% assay)
@@ -717,10 +715,11 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
                   to = ifelse(ensembleSize_total > ensembleSize, ensembleSize_total, ensembleSize))) {
 
       if(ensembleSize > 1) {
-        if(verbose)
+        if(verbose) {
           if(e %% 10 == 0) {
             message(e, ".")
           }
+        }
         if(cutoff == "median") {
           cs <- stats::median(referenceSet %>% dplyr::filter(data == assay[1]) %>% dplyr::pull(score), na.rm = TRUE)
         }
@@ -736,7 +735,12 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
           top <- round(n.ppis, 0)
         }
         if(is.null(inclusion)) {
-          inclusion <- round(log(1-0.9999) / log(1-ensembleSize_total/top),0)
+          if(ensembleSize_total > top) {
+            inclusion <- round(top/2, 0)
+          } else {
+            inclusion <- round(log(1-0.9999) / log(1-ensembleSize_total/top),0)
+          }
+
           if(inclusion < 30) {
             cat(paste0("minimum number of interactions to include are 30", "\n"))
             inclusion <- 30
