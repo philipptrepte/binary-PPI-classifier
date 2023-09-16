@@ -111,10 +111,21 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
   if(is.null(referenceSet)) {
     stop("User must provide a reference data set.")
     } else {
-    base::message("User defined-reference set provided.")
-    referenceSet <- referenceSet %>%
-      dplyr::filter(data %in% assay) %>%
-      dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, base::paste(negative.reference, collapse = "|")), "RRS", "PRS"))
+      base::message("User defined-reference set provided.")
+      if(!any(sapply(negative.reference, function(x) any(str_detect(referenceSet$complex, x))))) {
+        stop(paste0("No negative.reference elements are not found in the reference set."))
+      }
+      if(any(!sapply(negative.reference, function(x) any(str_detect(referenceSet$complex, x))))) {
+        message(paste0("The negative.reference element '",
+                       names(which(!sapply(negative.reference, function(x) any(str_detect(referenceSet$complex, x))))),
+                       "' is not found in the reference set. Only '",
+                       names(which(sapply(negative.reference, function(x) any(str_detect(referenceSet$complex, x))))),
+                       "' will be used as negative reference."))
+      }
+
+      referenceSet <- referenceSet %>%
+        dplyr::filter(data %in% assay) %>%
+        dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, base::paste(negative.reference, collapse = "|")), "RRS", "PRS"))
   }
 
   #check for luthy assay and additional parameters
@@ -275,7 +286,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
     scaler.global[[j]] <- stats::median(c(referenceSet %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(j),
                                    PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(j)), na.rm = TRUE)
     IQR.global[[j]] <- IQR.custom(c(referenceSet %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(j),
-                                    PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score")  %>% dplyr::pull(j)), na.rm = TRUE, range = range)
+                                    PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score")  %>% dplyr::pull(j)), na.rm = TRUE,
+                                  range = range)
   }
   if(method.scaling == "robust.scaler") {
     for(j in assay.scaling) {
