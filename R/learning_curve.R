@@ -24,7 +24,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     tidyr::separate(col = "sample", into = c("complex", "interaction", "sample", "orientation"), sep = ";") %>%
     dplyr::mutate(reference = complex) %>%
     dplyr::pull(reference)
-  if(!any(test_data_labels %in% ppi_prediction_result$negative.reference)) {
+  if(!any(sapply(ppi_prediction_result$negative.reference, function(x) any(str_detect(test_data_labels, x))))) {
     stop("The test data must contain positive and negative reference interactions.")
   }
   negative_reference = ppi_prediction_result$negative.reference

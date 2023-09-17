@@ -857,7 +857,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
 
 
       #predict positive interactions based on the training sets; also test performance on the reference set
-      pred.reference <- multiAdaSampling(train.mat, test.mat = subset(TrainTestMat, rownames(TrainTestMat) %ni% rownames(train.mat)), model.type = model.type, label = cls, kernelType = kernelType, iter = iter,
+      pred.reference <- multiAdaSampling(train.mat, test.mat = subset(TrainTestMat, rownames(TrainTestMat) %ni% rownames(train.mat)),
+                                         model.type = model.type, label = cls, kernelType = kernelType, iter = iter,
                                          cost = C, gamma = gamma, degree = degree, coef0 = coef0)
       pred.test <- multiAdaSampling(train.mat, test.mat = subset(testMat, rownames(testMat) %ni% train.ppis), model.type = model.type, label = cls, kernelType = kernelType, iter = iter,
                                     cost = C, gamma = gamma, degree = degree, coef0 = coef0)
