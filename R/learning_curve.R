@@ -16,7 +16,8 @@
 #' @export
 #'
 #' @examples
-learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1, by = 0.1), models = "all", verbose = TRUE) {
+learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1, by = 0.1), models = "all", verbose = TRUE, prob = 0.5) {
+  set.seed(ppi_prediction_result$seed)
   #extract results from ppi.prediction function
   train_data = ppi_prediction_result$training.sets
   test_data = ppi_prediction_result$testMat
@@ -81,8 +82,8 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       for (j in seq_len(ncol(pred.mat))) {
         voteClass <- pred.mat[label == base::colnames(pred.mat)[j], ]
         idx <- base::sample(seq_len(base::nrow(voteClass)),
-                      size = base::nrow(voteClass), replace = TRUE,
-                      prob = voteClass[, j])
+                            size = base::nrow(voteClass), replace = TRUE,
+                            prob = voteClass[, j])
         X <- base::rbind(X, base::as.matrix(train.mat[base::rownames(voteClass)[idx], ]))
         Y <- c(Y, label[base::rownames(voteClass)[idx]])
       }
@@ -101,13 +102,14 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
 
   test_data <- base::as.data.frame(test_data) %>% tibble::rownames_to_column("sample") %>%
     tidyr::separate(col = "sample", into = c("complex", "interaction", "sample", "orientation"), sep = ";") %>%
-    dplyr::mutate(reference = complex) %>%
-    tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
+    dplyr::mutate(reference = ifelse(str_detect(complex, pattern = paste(negative_reference, collapse = "|")), "RRS", "PRS")) %>%
+    tidyr::unite(reference, complex, interaction, sample, orientation, col = "sample", sep = ";") %>%
     tibble::column_to_rownames("sample")
 
   for (i in seq_along(n.models)) {
     train_labels <- train_data[[i]] %>% tibble::as_tibble() %>% mutate("id" = base::rownames(train_data[[i]])) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
     train_labels <- as.integer(!base::grepl(paste(negative_reference, collapse = "|"), train_labels))
+    names(train_labels) <- base::rownames(train_data[[i]])
 
     for (j in seq_along(train_sizes)) {
       if(j %% 10 == 0 & verbose == TRUE) {
@@ -127,9 +129,21 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       subset_indices <- c(subset_indices_prs, subset_indices_rrs)
       subset_train_data <- train_data[[i]][subset_indices, , drop = FALSE] %>% base::as.matrix()
       subset_train_labels <- train_labels[subset_indices]
+      assertthat::are_equal(x = base::rownames(subset_train_data), y = names(subset_train_labels))
+      assertthat::assert_that(all(str_detect(names(subset_train_labels[subset_train_labels == 0]), paste(negative_reference, collapse = "|"))))
+
       test_data_subset <- subset(test_data, base::rownames(test_data) %ni% base::rownames(subset_train_data)) %>% base::as.matrix()
+      test_indices_prs <- sample(rownames(test_data_subset)[grep("PRS", rownames(test_data_subset))], size = length(subset_indices_prs))
+      test_indices_rrs <- sample(rownames(test_data_subset)[grep("RRS", rownames(test_data_subset))], size = length(subset_indices_rrs))
+      test_subset_indices <- c(test_indices_prs, test_indices_rrs)
+      test_data_subset <- test_data_subset[test_subset_indices,]
+      assertthat::assert_that(any(base::rownames(test_data_subset) %ni% base::rownames(subset_train_data)),
+                              msg="Test set contains training set interactions")
       test_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
-      test_labels <- base::ifelse(test_labels == "PRS", 1, 0)
+      table(test_labels)
+      test_labels <- as.integer(!base::grepl(paste(negative_reference, collapse = "|"), test_labels))
+      names(test_labels) <- base::rownames(test_data_subset)
+      assertthat::assert_that(all(str_detect(names(test_labels[test_labels == 0]), paste(negative_reference, collapse = "|"))))
 
       # Make predictions on the training and test data using the trained model
       cls = base::as.factor(subset_train_labels+1)
@@ -142,38 +156,51 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
         train_predictions <- attr(train_predictions, "probabilities")
         train_predictions <- ifelse(train_predictions[,1] == 0, 1e-4, train_predictions[,1])
         train_predictions <- ifelse(train_predictions == 1, 0.999, train_predictions)
-        train_predictions_lables <- ifelse(train_predictions > 0.5, 1, 0)
+        train_predictions_lables <- ifelse(train_predictions > prob, 1, 0)
 
         test_predictions <- stats::predict(model, newdata = test_data_subset, decision.values = TRUE, probability = TRUE)
         test_predictions <- attr(test_predictions, "probabilities")
         test_predictions <- ifelse(test_predictions[,1] == 0, 1e-4, test_predictions[,1])
         test_predictions <- ifelse(test_predictions == 1, 0.999, test_predictions)
-        test_predictions_lables <- ifelse(test_predictions > 0.5, 1, 0)
+        test_predictions_lables <- ifelse(test_predictions > prob, 1, 0)
       }
       else if (ppi_prediction_result$model.type == "randomforest") {
         train_predictions <- stats::predict(model, newdata = subset_train_data, type = "prob")
         train_predictions <- ifelse(train_predictions[,2] == 0, 1e-4, train_predictions[,2])
         train_predictions <- ifelse(train_predictions == 1, 0.999, train_predictions)
-        train_predictions_lables <- ifelse(train_predictions > 0.5, 1, 0)
+        train_predictions_lables <- ifelse(train_predictions > prob, 1, 0)
 
         test_predictions <- stats::predict(model, newdata = test_data_subset, type = "prob")
         test_predictions <- ifelse(test_predictions[,2] == 0, 1e-4, test_predictions[,2])
         test_predictions <- ifelse(test_predictions == 1, 0.999, test_predictions)
-        test_predictions_lables <- ifelse(test_predictions > 0.5, 1, 0)
+        test_predictions_lables <- ifelse(test_predictions > prob, 1, 0)
       }
       else {
         stop("Invalid model.type. Please choose 'svm' or 'randomforest'.")
       }
 
       # Calculate performance metrics accuracy
+      assertthat::assert_that(all(names(train_predictions_lables) == rownames(train_data[[i]][subset_indices,])),
+                              msg = "Predicted training set not equal to input training set")
       train_perf <- base::mean(train_predictions_lables == subset_train_labels)
+      assertthat::assert_that(all(names(test_predictions_lables) == rownames(test_data_subset)),
+                              msg = "Predicted test set not equal to input test set")
       test_perf <- base::mean(test_predictions_lables == test_labels)
 
       # Calculate 'Binary Cross-Entropy Loss' and 'Hinge loss'
+      assertthat::assert_that(all(names(subset_train_labels) == names(train_predictions)),
+                              msg = "Predicted training set not equal to input training set")
       train_loss_fold <- binary_cross_entropy_loss(subset_train_labels, train_predictions)
+      assertthat::assert_that(all(names(test_labels) == names(test_predictions)),
+                              msg = "Predicted test set not equal to input test set")
       test_loss_fold <- binary_cross_entropy_loss(test_labels, test_predictions)
+
+      assertthat::assert_that(all(names(subset_train_labels) == names(train_predictions_lables)),
+                              msg = "Predicted training set not equal to input training set")
       train_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(subset_train_labels == 0, -1, subset_train_labels),
                                                predicted_labels = base::ifelse(train_predictions_lables == 0, -1, train_predictions_lables))
+      assertthat::assert_that(all(names(test_labels) == names(test_predictions_lables)),
+                              msg = "Predicted test set not equal to input test set")
       test_hinge_loss <- calculate_hinge_loss(actual_labels = base::ifelse(test_labels == 0, -1, test_labels),
                                               predicted_labels = base::ifelse(test_predictions_lables == 0, -1, test_predictions_lables))
 
@@ -221,9 +248,9 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     ggplot2::scale_fill_manual(values = c("Training" = "#6CA6C1", "Test" = "#D930C5")) +
     ggpubr::theme_pubr() +
     ggplot2::theme(text = element_text(family = "Avenir"),
-          plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 8),
-          axis.title = element_text(family = "Avenir Medium")) +
+                   plot.title = element_text(size = 12),
+                   plot.subtitle = element_text(size = 8),
+                   axis.title = element_text(family = "Avenir Medium")) +
     ggplot2::scale_x_continuous(limits = c(0,NA), breaks = base::seq(0, 1, by=0.2))
 
   # Return the learning curves with performance and loss
