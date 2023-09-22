@@ -145,7 +145,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       test_indices_prs <- sample(rownames(test_data_subset)[str_starts(pattern = "PRS", string = rownames(test_data_subset))], size = n_subset)
       test_indices_rrs <- sample(rownames(test_data_subset)[str_starts(pattern = "RRS", string = rownames(test_data_subset))], size = n_subset)
       test_subset_indices <- c(test_indices_prs, test_indices_rrs)
-      test_data_subset <- test_data_subset[test_subset_indices,]
+      test_data_subset <- subset(test_data_subset, test_subset_indices %in% rownames(test_data_subset))
       assertthat::assert_that(any(base::rownames(test_data_subset) %ni% base::rownames(subset_train_data)),
                               msg="Test set contains training set interactions")
       test_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
