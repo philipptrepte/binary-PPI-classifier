@@ -121,6 +121,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
         message(train_sizes[j]*100, "% training size for model ", i, " completed.")
       }
       size <- train_sizes[j]
+      max_size <- train_sizes[max(seq_along(train_sizes))]
       if(round(size * length(train_labels[train_labels == 1])) == 1){
         if(verbose == TRUE) {
           message(paste0("at ", train_sizes[j]*100, "% of the training set, the training subset with only one interaction is to small. Training will continue with ", train_sizes[j+1]*100, "% of training set."))
@@ -138,8 +139,11 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
                               msg = 'Train labels do not contain negative reference interactions')
 
       test_data_subset <- subset(test_data, base::rownames(test_data) %ni% base::rownames(subset_train_data)) %>% base::as.matrix()
-      test_indices_prs <- sample(rownames(test_data_subset)[str_starts(pattern = "PRS", string = rownames(test_data_subset))], size = length(subset_indices_prs))
-      test_indices_rrs <- sample(rownames(test_data_subset)[str_starts(pattern = "RRS", string = rownames(test_data_subset))], size = length(subset_indices_rrs))
+      n_prs <- length(rownames(test_data_subset)[str_starts(pattern = "PRS", string = rownames(test_data_subset))])
+      n_rrs <- length(rownames(test_data_subset)[str_starts(pattern = "RRS", string = rownames(test_data_subset))])
+      n_subset <- min(n_prs, n_rrs, round(max_size * length(train_labels)))
+      test_indices_prs <- sample(rownames(test_data_subset)[str_starts(pattern = "PRS", string = rownames(test_data_subset))], size = n_subset)
+      test_indices_rrs <- sample(rownames(test_data_subset)[str_starts(pattern = "RRS", string = rownames(test_data_subset))], size = n_subset)
       test_subset_indices <- c(test_indices_prs, test_indices_rrs)
       test_data_subset <- test_data_subset[test_subset_indices,]
       assertthat::assert_that(any(base::rownames(test_data_subset) %ni% base::rownames(subset_train_data)),
