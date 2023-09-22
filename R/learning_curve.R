@@ -8,9 +8,10 @@
 #' @import cowplot
 #'
 #' @param ppi_prediction_result: result from the function ppi.prediction
-#' @param train_sizes: base::sequence of fraction of training sizes to be used for calculation from >0 to 1
+#' @param train_sizes: sequence of fraction of training sizes to be used for calculation from >0 to 1
 #' @param models: Integer of models used to calculate the loss functions. If "all" then all models as specified by the ensembleSize in ppi.prediction will be used.
 #' @param verbose: boolean, prints detailed informations
+#' @param prob: probability cutoff to calculate accuracy
 #'
 #' @return a list with elements
 #' @export
@@ -39,14 +40,18 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
 
   #define custom functions
   `%ni%` <- Negate(`%in%`)
+
   binary_cross_entropy_loss <- function(actual_labels, predicted_probs) {
-    -base::mean(actual_labels * log(predicted_probs) + (1 - actual_labels) * log(1 - predicted_probs))
+    entropy_loss <- -median(actual_labels * log(predicted_probs) + (1 - actual_labels) * log(1 - predicted_probs))
+    return(entropy_loss)
   }
+
   calculate_hinge_loss <- function(actual_labels, predicted_labels) {
     loss <- 1 - actual_labels * predicted_labels
     hinge_loss <- base::ifelse(loss < 0, 0, loss)
     return(hinge_loss)
   }
+
   multiAdaSampling <- function(train.mat, label, model_type, kernelType = kernelType, iter = iter, cost = C, gamma = gamma, degree = degree, coef0 = coef0) {
 
     X <- train.mat
@@ -129,21 +134,21 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       subset_indices <- c(subset_indices_prs, subset_indices_rrs)
       subset_train_data <- train_data[[i]][subset_indices, , drop = FALSE] %>% base::as.matrix()
       subset_train_labels <- train_labels[subset_indices]
-      assertthat::are_equal(x = base::rownames(subset_train_data), y = names(subset_train_labels))
-      assertthat::assert_that(all(str_detect(names(subset_train_labels[subset_train_labels == 0]), paste(negative_reference, collapse = "|"))))
+      assertthat::assert_that(all(str_detect(names(subset_train_labels[subset_train_labels == 0]), paste(negative_reference, collapse = "|"))),
+                              msg = 'Train labels do not contain negative reference interactions')
 
       test_data_subset <- subset(test_data, base::rownames(test_data) %ni% base::rownames(subset_train_data)) %>% base::as.matrix()
-      test_indices_prs <- sample(rownames(test_data_subset)[grep("PRS", rownames(test_data_subset))], size = length(subset_indices_prs))
-      test_indices_rrs <- sample(rownames(test_data_subset)[grep("RRS", rownames(test_data_subset))], size = length(subset_indices_rrs))
+      test_indices_prs <- sample(rownames(test_data_subset)[str_starts(pattern = "PRS", string = rownames(test_data_subset))], size = length(subset_indices_prs))
+      test_indices_rrs <- sample(rownames(test_data_subset)[str_starts(pattern = "RRS", string = rownames(test_data_subset))], size = length(subset_indices_rrs))
       test_subset_indices <- c(test_indices_prs, test_indices_rrs)
       test_data_subset <- test_data_subset[test_subset_indices,]
       assertthat::assert_that(any(base::rownames(test_data_subset) %ni% base::rownames(subset_train_data)),
                               msg="Test set contains training set interactions")
       test_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
-      table(test_labels)
       test_labels <- as.integer(!base::grepl(paste(negative_reference, collapse = "|"), test_labels))
       names(test_labels) <- base::rownames(test_data_subset)
-      assertthat::assert_that(all(str_detect(names(test_labels[test_labels == 0]), paste(negative_reference, collapse = "|"))))
+      assertthat::assert_that(all(str_detect(names(test_labels[test_labels == 0]), paste(negative_reference, collapse = "|"))),
+                              msg = 'Test labels do not contain negative reference interactions')
 
       # Make predictions on the training and test data using the trained model
       cls = base::as.factor(subset_train_labels+1)
@@ -163,8 +168,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
         test_predictions <- ifelse(test_predictions[,1] == 0, 1e-4, test_predictions[,1])
         test_predictions <- ifelse(test_predictions == 1, 0.999, test_predictions)
         test_predictions_lables <- ifelse(test_predictions > prob, 1, 0)
-      }
-      else if (ppi_prediction_result$model.type == "randomforest") {
+      } else if (ppi_prediction_result$model.type == "randomforest") {
         train_predictions <- stats::predict(model, newdata = subset_train_data, type = "prob")
         train_predictions <- ifelse(train_predictions[,2] == 0, 1e-4, train_predictions[,2])
         train_predictions <- ifelse(train_predictions == 1, 0.999, train_predictions)
@@ -174,8 +178,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
         test_predictions <- ifelse(test_predictions[,2] == 0, 1e-4, test_predictions[,2])
         test_predictions <- ifelse(test_predictions == 1, 0.999, test_predictions)
         test_predictions_lables <- ifelse(test_predictions > prob, 1, 0)
-      }
-      else {
+      } else {
         stop("Invalid model.type. Please choose 'svm' or 'randomforest'.")
       }
 
@@ -193,7 +196,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       train_loss_fold <- binary_cross_entropy_loss(subset_train_labels, train_predictions)
       assertthat::assert_that(all(names(test_labels) == names(test_predictions)),
                               msg = "Predicted test set not equal to input test set")
-      test_loss_fold <- binary_cross_entropy_loss(test_labels, test_predictions)
+      test_loss_fold <- binary_cross_entropy_loss(actual_labels = test_labels, predicted_probs = test_predictions)
 
       assertthat::assert_that(all(names(subset_train_labels) == names(train_predictions_lables)),
                               msg = "Predicted training set not equal to input training set")
@@ -265,3 +268,4 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
               Df_sumstat = df2,
               learning_plot = plot))
 }
+
