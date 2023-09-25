@@ -26,6 +26,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     tidyr::separate(col = "sample", into = c("complex", "interaction", "sample", "orientation"), sep = ";") %>%
     dplyr::mutate(reference = complex) %>%
     dplyr::pull(reference)
+
   if(!any(sapply(ppi_prediction_result$negative.reference, function(x) any(str_detect(test_data_labels, x))))) {
     stop("The test data must contain positive and negative reference interactions.")
   }
@@ -108,12 +109,12 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   test_data <- base::as.data.frame(test_data) %>% tibble::rownames_to_column("sample") %>%
     tidyr::separate(col = "sample", into = c("complex", "interaction", "sample", "orientation"), sep = ";") %>%
     dplyr::mutate(reference = ifelse(str_detect(complex, pattern = paste(negative_reference, collapse = "|")), "RRS", "PRS")) %>%
-    tidyr::unite(reference, complex, interaction, sample, orientation, col = "sample", sep = ";") %>%
+    tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
     tibble::column_to_rownames("sample")
 
   for (i in seq_along(n.models)) {
-    train_labels <- train_data[[i]] %>% tibble::as_tibble() %>% mutate("id" = base::rownames(train_data[[i]])) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
-    train_labels <- as.integer(!base::grepl(paste(negative_reference, collapse = "|"), train_labels))
+    train_labels <- train_data[[i]] %>% tibble::as_tibble() %>% mutate("id" = base::rownames(train_data[[i]])) %>% tidyr::separate(col = "id", into = c("complex", "reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
+    train_labels <- as.integer(ifelse(train_labels == "RRS", 0, 1))
     names(train_labels) <- base::rownames(train_data[[i]])
 
     for (j in seq_along(train_sizes)) {
@@ -139,17 +140,19 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
                               msg = 'Train labels do not contain negative reference interactions')
 
       test_data_subset <- subset(test_data, base::rownames(test_data) %ni% base::rownames(subset_train_data)) %>% base::as.matrix()
-      n_prs <- length(rownames(test_data_subset)[str_starts(pattern = "PRS", string = rownames(test_data_subset))])
-      n_rrs <- length(rownames(test_data_subset)[str_starts(pattern = "RRS", string = rownames(test_data_subset))])
+      test_data_subset_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("complex", "reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
+      test_data_subset_labels <- as.integer(ifelse(test_data_subset_labels == "RRS", 0, 1))
+      n_prs <- length(test_data_subset_labels[test_data_subset_labels == 1])
+      n_rrs <- length(test_data_subset_labels[test_data_subset_labels == 0])
       n_subset <- min(n_prs, n_rrs, round(max_size * length(train_labels)))
-      test_indices_prs <- sample(rownames(test_data_subset)[str_starts(pattern = "PRS", string = rownames(test_data_subset))], size = n_subset)
-      test_indices_rrs <- sample(rownames(test_data_subset)[str_starts(pattern = "RRS", string = rownames(test_data_subset))], size = n_subset)
+      test_indices_prs <- sample(rownames(test_data_subset)[test_data_subset_labels == 1], size = n_subset)
+      test_indices_rrs <- sample(rownames(test_data_subset)[test_data_subset_labels == 0], size = n_subset)
       test_subset_indices <- c(test_indices_prs, test_indices_rrs)
-      test_data_subset <- subset(test_data_subset, test_subset_indices %in% rownames(test_data_subset))
+      test_data_subset <- subset(test_data_subset, rownames(test_data_subset) %in% test_subset_indices)
       assertthat::assert_that(any(base::rownames(test_data_subset) %ni% base::rownames(subset_train_data)),
                               msg="Test set contains training set interactions")
-      test_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
-      test_labels <- as.integer(!base::grepl(paste(negative_reference, collapse = "|"), test_labels))
+      test_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("complex", "reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
+      test_labels <- as.integer(ifelse(test_labels == "RRS", 0, 1))
       names(test_labels) <- base::rownames(test_data_subset)
       assertthat::assert_that(all(str_detect(names(test_labels[test_labels == 0]), paste(negative_reference, collapse = "|"))),
                               msg = 'Test labels do not contain negative reference interactions')
