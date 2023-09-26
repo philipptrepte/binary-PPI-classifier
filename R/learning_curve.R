@@ -21,9 +21,9 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   set.seed(ppi_prediction_result$seed)
   #extract results from ppi.prediction function
   train_data = ppi_prediction_result$training.sets
-  test_data = ppi_prediction_result$trainMat
-  test_data_labels <- base::as.data.frame(test_data) %>% tibble::rownames_to_column("sample") %>%
-    tidyr::separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
+  test_data = ppi_prediction_result$predTrainDf %>%
+    dplyr::filter(!is.na(predTrainMat))
+  test_data_labels <- test_data %>%
     dplyr::pull(reference)
 
   if(!any(sapply(ppi_prediction_result$negative.reference, function(x) any(str_detect(test_data_labels, x))))) {
@@ -105,6 +105,11 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   train_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store training hinge
   test_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store test hinge
 
+  test_data_mat <- test_data %>%
+    tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
+    dplyr::select(sample, ppi_prediction_result$assay) %>%
+    tibble::column_to_rownames("sample") %>% as.matrix()
+
   for (i in seq_along(n.models)) {
     train_labels <- train_data[[i]] %>% tibble::as_tibble() %>% mutate("id" = base::rownames(train_data[[i]])) %>% tidyr::separate(col = "id", into = c("complex", "reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
     train_labels <- as.integer(ifelse(train_labels == "RRS", 0, 1))
@@ -132,7 +137,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
       assertthat::assert_that(all(str_detect(names(subset_train_labels[subset_train_labels == 0]), paste(negative_reference, collapse = "|"))),
                               msg = 'Train labels do not contain negative reference interactions')
 
-      test_data_subset <- subset(test_data, base::rownames(test_data) %ni% base::rownames(subset_train_data)) %>% base::as.matrix()
+      test_data_subset <- subset(test_data_mat, base::rownames(test_data_mat) %ni% base::rownames(subset_train_data)) %>% base::as.matrix()
       test_data_subset_labels <- test_data_subset %>% tibble::as_tibble() %>% mutate("id" = base::rownames(test_data_subset)) %>% tidyr::separate(col = "id", into = c("complex", "reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
       test_data_subset_labels <- as.integer(ifelse(test_data_subset_labels == "RRS", 0, 1))
       n_prs <- length(test_data_subset_labels[test_data_subset_labels == 1])
