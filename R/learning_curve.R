@@ -21,10 +21,9 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   set.seed(ppi_prediction_result$seed)
   #extract results from ppi.prediction function
   train_data = ppi_prediction_result$training.sets
-  test_data = ppi_prediction_result$testMat
+  test_data = ppi_prediction_result$trainMat
   test_data_labels <- base::as.data.frame(test_data) %>% tibble::rownames_to_column("sample") %>%
-    tidyr::separate(col = "sample", into = c("complex", "interaction", "sample", "orientation"), sep = ";") %>%
-    dplyr::mutate(reference = complex) %>%
+    tidyr::separate(col = "sample", into = c("complex", "reference", "interaction", "sample", "orientation"), sep = ";") %>%
     dplyr::pull(reference)
 
   if(!any(sapply(ppi_prediction_result$negative.reference, function(x) any(str_detect(test_data_labels, x))))) {
@@ -105,12 +104,6 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   test_loss <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store test loss
   train_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store training hinge
   test_hinge <- base::matrix(0, nrow = length(train_sizes), ncol = length(n.models))  # Store test hinge
-
-  test_data <- base::as.data.frame(test_data) %>% tibble::rownames_to_column("sample") %>%
-    tidyr::separate(col = "sample", into = c("complex", "interaction", "sample", "orientation"), sep = ";") %>%
-    dplyr::mutate(reference = ifelse(str_detect(complex, pattern = paste(negative_reference, collapse = "|")), "RRS", "PRS")) %>%
-    tidyr::unite(complex, reference, interaction, sample, orientation, col = "sample", sep = ";") %>%
-    tibble::column_to_rownames("sample")
 
   for (i in seq_along(n.models)) {
     train_labels <- train_data[[i]] %>% tibble::as_tibble() %>% mutate("id" = base::rownames(train_data[[i]])) %>% tidyr::separate(col = "id", into = c("complex", "reference"), extra = "drop", sep = ";") %>% dplyr::pull(reference)
