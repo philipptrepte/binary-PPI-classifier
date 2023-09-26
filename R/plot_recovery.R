@@ -11,9 +11,15 @@
 #' @export
 #'
 #' @examples
-recovery.plot <- function(ppi_prediction_result) {
-  ppi_prediction_result$predDf %>%
-    dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, "inter-complex|RRS"), "RRS", "PRS")) %>%
+recovery.plot <- function(ppi_prediction_result, set="test") {
+  assertthat::assert_that(set %in% c("test", "train"), msg = "'set=' must be 'test' or 'train'.")
+  if(set == "test") {
+    df <- ppi_prediction_result$predDf
+  } else if(set == "train") {
+    df <- ppi_prediction_result$predTrainDf
+  }
+  df %>%
+    dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, paste(ppi_prediction_result$negative.reference, collapse = "|")), "RRS", "PRS")) %>%
     dplyr::group_by(interaction, reference) %>%
     dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%
     dplyr::mutate(pos = base::ifelse(score > 0.5, 1, 0),
@@ -24,8 +30,8 @@ recovery.plot <- function(ppi_prediction_result) {
                      recovery = pos / total * 100,
                      sep = sqrt(recovery*(100-recovery)/total)) %>%
     rbind(
-      ppi_prediction_result$predDf %>%
-        dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, "inter-complex|RRS"), "RRS", "PRS")) %>%
+      df %>%
+        dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, paste(ppi_prediction_result$negative.reference, collapse = "|")), "RRS", "PRS")) %>%
         dplyr::group_by(interaction, reference) %>%
         dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%
         dplyr::mutate(pos = base::ifelse(score > 0.75, 1, 0),
@@ -37,8 +43,8 @@ recovery.plot <- function(ppi_prediction_result) {
                          sep = sqrt(recovery*(100-recovery)/total))
     ) %>%
     rbind(
-      ppi_prediction_result$predDf %>%
-        dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, "inter-complex|RRS"), "RRS", "PRS")) %>%
+      df %>%
+        dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, paste(ppi_prediction_result$negative.reference, collapse = "|")), "RRS", "PRS")) %>%
         dplyr::group_by(interaction, reference) %>%
         dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%
         dplyr::mutate(pos = base::ifelse(score > 0.95, 1, 0),
