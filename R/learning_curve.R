@@ -118,8 +118,8 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     names(train_labels) <- base::rownames(train_data[[i]])
 
     for (j in seq_along(train_sizes)) {
-      if(j %% 10 == 0 & verbose == TRUE) {
-        message(train_sizes[j]*100, "% training size for model ", i, " completed.")
+      if(j == max(seq_along(train_sizes)) & verbose == TRUE) {
+        message("learning curve for model ", i, " completed.")
       }
       size <- train_sizes[j]
       max_size <- train_sizes[max(seq_along(train_sizes))]
