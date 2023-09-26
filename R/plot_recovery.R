@@ -14,12 +14,12 @@
 recovery.plot <- function(ppi_prediction_result, set="test") {
   assertthat::assert_that(set %in% c("test", "train"), msg = "'set=' must be 'test' or 'train'.")
   if(set == "test") {
-    df <- ppi_prediction_result$predDf
+    Df <- ppi_prediction_result$predDf
   } else if(set == "train") {
-    df <- ppi_prediction_result$predTrainDf %>%
+    Df <- ppi_prediction_result$predTrainDf %>%
       dplyr::rename(predMat = predTrainMat)
   }
-  df %>%
+  Df %>%
     dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, paste(ppi_prediction_result$negative.reference, collapse = "|")), "RRS", "PRS")) %>%
     dplyr::group_by(interaction, reference) %>%
     dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%
@@ -31,7 +31,7 @@ recovery.plot <- function(ppi_prediction_result, set="test") {
                      recovery = pos / total * 100,
                      sep = sqrt(recovery*(100-recovery)/total)) %>%
     rbind(
-      df %>%
+      Df %>%
         dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, paste(ppi_prediction_result$negative.reference, collapse = "|")), "RRS", "PRS")) %>%
         dplyr::group_by(interaction, reference) %>%
         dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%
@@ -44,7 +44,7 @@ recovery.plot <- function(ppi_prediction_result, set="test") {
                          sep = sqrt(recovery*(100-recovery)/total))
     ) %>%
     rbind(
-      df %>%
+      Df %>%
         dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, paste(ppi_prediction_result$negative.reference, collapse = "|")), "RRS", "PRS")) %>%
         dplyr::group_by(interaction, reference) %>%
         dplyr::summarise(score = max(predMat, na.rm = TRUE)) %>%

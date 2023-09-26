@@ -17,15 +17,15 @@
 #' @examples
 roc.plot <- function(ppi_prediction_result) {
   n.assays <- length(ppi_prediction_result$assay)
-  prob.aggregated <- ppi_prediction_result$predDf %>%
-    dplyr::mutate(D = ifelse(stringr::str_detect(complex, "inter-complex|RRS"), "0", "1")) %>%
+  prob.aggregated <- ppi_prediction_result$predTrainDf %>%
+    dplyr::mutate(D = ifelse(stringr::str_detect(reference, paste(ppi_prediction_result$negative.reference, collapse = "|")), "0", "1")) %>%
     dplyr::group_by(interaction, D) %>%
-    dplyr::summarise(M = max(predMat, na.rm = TRUE))
+    dplyr::summarise(M = max(predTrainMat, na.rm = TRUE))
 
   assay.aggregated <- list()
   for(a in seq(n.assays)) {
-    assay.aggregated[[a]] <- ppi_prediction_result$predDf %>%
-      dplyr::mutate(D = ifelse(stringr::str_detect(complex, "inter-complex|RRS"), "0", "1")) %>%
+    assay.aggregated[[a]] <- ppi_prediction_result$predTrainDf %>%
+      dplyr::mutate(D = ifelse(stringr::str_detect(reference, paste(ppi_prediction_result$negative.reference, collapse = "|")), "0", "1")) %>%
       dplyr::group_by(interaction, D) %>%
       dplyr::summarise(M = max(!!(rlang::sym(ppi_prediction_result$assay[a])), na.rm = TRUE))
   }
