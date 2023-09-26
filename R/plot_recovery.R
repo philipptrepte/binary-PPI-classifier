@@ -16,7 +16,8 @@ recovery.plot <- function(ppi_prediction_result, set="test") {
   if(set == "test") {
     df <- ppi_prediction_result$predDf
   } else if(set == "train") {
-    df <- ppi_prediction_result$predTrainDf
+    df <- ppi_prediction_result$predTrainDf %>%
+      dplyr::rename(predMat = predTrainMat)
   }
   df %>%
     dplyr::mutate(reference = base::ifelse(stringr::str_detect(complex, paste(ppi_prediction_result$negative.reference, collapse = "|")), "RRS", "PRS")) %>%
