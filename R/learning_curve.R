@@ -12,12 +12,15 @@
 #' @param models: Integer of models used to calculate the loss functions. If "all" then all models as specified by the ensembleSize in ppi.prediction will be used.
 #' @param verbose: boolean, prints detailed informations
 #' @param prob: probability cutoff to calculate accuracy
+#' @param sum_data: summary statistic to plot: 'Mean', 'Median', or 'None'
 #'
 #' @return a list with elements
 #' @export
 #'
 #' @examples
-learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1, by = 0.1), models = "all", verbose = TRUE, prob = 0.5) {
+#' data("example_ppi_prediction")
+#' plot <- learning.curve(example_ppi_prediction)
+learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1, by = 0.1), models = "all", verbose = TRUE, prob = 0.5, sum_data = 'Median') {
   set.seed(ppi_prediction_result$seed)
   #extract results from ppi.prediction function
   train_data = ppi_prediction_result$training.sets
@@ -235,6 +238,7 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
                        Accuracy, Loss, Hinge) %>%
     dplyr::group_by(Training_Size, Label, Performance_Type) %>%
     dplyr::summarise(Mean = base::mean(Value),
+                     Median = median(Value),
                      Sd = sd(Value),
                      Ci5 = quantile(Value, probs = 0.05),
                      Ci25 = quantile(Value, probs = 0.25),
@@ -243,15 +247,9 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
     dplyr::ungroup()
 
   #Plot the accuracy, hinge loss and binary cross-entropy loss
-  plot <- ggplot(df2, aes(x = Training_Size, y = Mean, color = Label, fill = Label)) +
+  plot <- ggplot(data = df2, aes(x = Training_Size, color = Label, fill = Label)) +
     ggplot2::geom_ribbon(aes(ymin = Ci25, ymax = Ci75), alpha = 0.15, linetype = "dotdash", size = 0.5) +
-    ggplot2::geom_line(size = 1) +
     ggplot2::facet_wrap(. ~ Performance_Type, scales = "free", labeller = labeller(Performance_Type = c(Loss = "Binary Cross-Entropy Loss", Accuracy = "Accuracy", Hinge = "Hinge Loss"))) +
-    ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste0("Mean + IQR Learning Curves for the ", ppi_prediction_result$ensembleSize, " ", ppi_prediction_result$model.type, " models"),
-                  subtitle = paste0("sampling: ", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling),
-                                    if(ppi_prediction_result$model.type == "svm") paste0(" | kernel type: ", ppi_prediction_result$kernelType),
-                                    " | cutoff: ", ppi_prediction_result$cutoff,
-                                    " | iterations: ", ppi_prediction_result$iter)) +
     ggplot2::scale_color_manual(values = c("Training" = "#6CA6C1", "Test" = "#D930C5")) +
     ggplot2::scale_fill_manual(values = c("Training" = "#6CA6C1", "Test" = "#D930C5")) +
     ggpubr::theme_pubr() +
@@ -260,6 +258,32 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
                    plot.subtitle = element_text(size = 8),
                    axis.title = element_text(family = "Avenir Medium")) +
     ggplot2::scale_x_continuous(limits = c(0,NA), breaks = base::seq(0, 1, by=0.2))
+
+  assertthat::assert_that(sum_data %in% c('Median', 'Mean', 'None'), msg = "'sum_data' must be 'Median', 'Mean' or 'None'")
+  if(sum_data == 'Median') {
+    plot <- plot +
+      ggplot2::geom_line(aes(y = Median), size = 1) +
+      ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste0("Median + IQR Learning Curves for the ", ppi_prediction_result$ensembleSize, " ", ppi_prediction_result$model.type, " models"),
+                    subtitle = paste0("sampling: ", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling),
+                                      if(ppi_prediction_result$model.type == "svm") paste0(" | kernel type: ", ppi_prediction_result$kernelType),
+                                      " | cutoff: ", ppi_prediction_result$cutoff,
+                                      " | iterations: ", ppi_prediction_result$iter))
+  } else if(sum_data == 'Mean') {
+    plot <- plot +
+      ggplot2::geom_line(aes(y = Mean), size = 1) +
+      ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste0("Mean + IQR Learning Curves for the ", ppi_prediction_result$ensembleSize, " ", ppi_prediction_result$model.type, " models"),
+                    subtitle = paste0("sampling: ", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling),
+                                      if(ppi_prediction_result$model.type == "svm") paste0(" | kernel type: ", ppi_prediction_result$kernelType),
+                                      " | cutoff: ", ppi_prediction_result$cutoff,
+                                      " | iterations: ", ppi_prediction_result$iter))
+  } else if(sum_data == "None") {
+    plot <- plot +
+      ggplot2::labs(x = "Fraction of Training Set Size", y = "Value", title = paste0("IQR Learning Curves for the ", ppi_prediction_result$ensembleSize, " ", ppi_prediction_result$model.type, " models"),
+                    subtitle = paste0("sampling: ", base::ifelse(ppi_prediction_result$sampling == "unweighted", "unweighted", ppi_prediction_result$sampling),
+                                      if(ppi_prediction_result$model.type == "svm") paste0(" | kernel type: ", ppi_prediction_result$kernelType),
+                                      " | cutoff: ", ppi_prediction_result$cutoff,
+                                      " | iterations: ", ppi_prediction_result$iter))
+  }
 
   # Return the learning curves with performance and loss
   return(list(Training_Sizes = train_sizes,

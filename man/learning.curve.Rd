@@ -8,21 +8,31 @@ learning.curve(
   ppi_prediction_result,
   train_sizes = base::seq(0.1, 1, by = 0.1),
   models = "all",
-  verbose = TRUE
+  verbose = TRUE,
+  prob = 0.5,
+  sum_data = "Median"
 )
 }
 \arguments{
 \item{ppi_prediction_result:}{result from the function ppi.prediction}
 
-\item{train_sizes:}{base::sequence of fraction of training sizes to be used for calculation from >0 to 1}
+\item{train_sizes:}{sequence of fraction of training sizes to be used for calculation from >0 to 1}
 
 \item{models:}{Integer of models used to calculate the loss functions. If "all" then all models as specified by the ensembleSize in ppi.prediction will be used.}
 
 \item{verbose:}{boolean, prints detailed informations}
+
+\item{prob:}{probability cutoff to calculate accuracy}
+
+\item{sum_data:}{summary statistic to plot: 'Mean', 'Median', or 'None'}
 }
 \value{
 a list with elements
 }
 \description{
 Function to calculate and plot the accuracy, hinge loss and binary cross-entropy loss of a machine learning prediction using the ppi.prediction function.
+}
+\examples{
+data("example_ppi_prediction")
+plot <- learning.curve(example_ppi_prediction)
 }
