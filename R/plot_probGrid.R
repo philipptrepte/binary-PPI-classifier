@@ -29,7 +29,7 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
     Df <- ppi_prediction_result$predTrainDf %>%
       dplyr::rename(predMat = predTrainMat)
   }
-  if (ppi_prediction_result$model.type == "randomforest") {
+  if(ppi_prediction_result$model.type == "randomforest") {
     stop("Only available for ppi.prediction() results with 'svm' model")
   }
   lseq <- function(from = 1, to = 1e+05, length.out = 6) {
@@ -42,14 +42,15 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
     if (length(ppi_prediction_result$assay) == 1) {
       x <- base::cbind(ppi_prediction_result$testMat,
                        row_number = 1:nrow(ppi_prediction_result$testMat)) %>%
-        base::rbind(base::cbind(ppi_prediction_result$trainMat,
-                                row_number = nrow(ppi_prediction_result$testMat)+1:nrow(ppi_prediction_result$trainMat)))
+        base::rbind(base::cbind(ppi_prediction_result$predTrainDf %>%
+                                  dplyr::select(ppi_prediction_result$assay),
+                                row_number = nrow(ppi_prediction_result$testMat)+1:nrow(ppi_prediction_result$predTrainDf)))
       x.log.scale <- FALSE
       base::message("ML algorithm was trained on one feature. x-scale will be linear showing the number of interactions")
     } else if (length(ppi_prediction_result$assay) >= 2) {
-      x <- rbind(ppi_prediction_result$testMat, ppi_prediction_result$trainMat)
+      x <- rbind(ppi_prediction_result$testMat, ppi_prediction_result$predTrainDf %>% dplyr::select(ppi_prediction_result$assay))
     }
-    grange <- base::apply(x, 2, range)
+    grange <- base::apply(x, 2, FUN = range, na.rm = TRUE)
     x1 <- base::seq(from = grange[1, 1], to = grange[2, 1], length = n)
     if (x.log.scale == TRUE) {
       if(any(grange < 0)) {
@@ -57,8 +58,7 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
       }
       x2 <- lseq(from = grange[1, 2], to = grange[2, 2],
                  length = n)
-    }
-    else if (x.log.scale == FALSE) {
+    } else if (x.log.scale == FALSE) {
       x2 <- base::seq(from = grange[1, 2], to = grange[2,
                                                        2], length = n)
     }

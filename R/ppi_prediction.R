@@ -10,13 +10,15 @@
 #' @param PPIdf: binary PPI data set containing interactions to be classified
 #' @param referenceSet: reference PPI data set containing reference interactions used to train the svm models
 #' @param seed: set seed
-#' @param method.scaling: accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"
+#' @param construct.scaling: accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"
+#' @param independent: logical; are the referenceSet and PPIdf independent datasets? If TRUE a 'robust.scaler' normalization is performed
+#' @param independent.reference: logical; is the referenceSet a collection of independently collected reference sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct reference sets indicated by a column 'dataset'
+#' @param independent.PPIdf: logical; is the PPIdf a collection of independently collected data sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct data sets indicated by a column 'dataset'
 #' @param iter.scaler: if TRUE and when using "robust.scaler" it iteratively performs robust scaler normalization until the IQR of each construct is within the IQR of all loaded data sets
 #' @param range: IQR range used in "robust.scaler"
-#' @param data.scaling: speficies which data provided under 'assay' is scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.
+#' @param data.scaling: speficies for which 'assay' the construcst are scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.
 #' @param negative.reference: string in the column "complex" to specify the negative/random interactions
 #' @param assay: assay parameters used for training
-#' @param all.configurations: if TRUE all orientations for each interactions are used; if FALSE only the highest scoring orientation for each interaction is used
 #' @param sampling: use "weighted" or "unweighted" sampling to generate the independent training sets
 #' @param weightBy: assay parameter used for weighted sampling
 #' @param weightHi: if TRUE weighted sampling uses preferentially higher values; if FALSE weighted sampling uses preferentially smaller values
@@ -38,12 +40,12 @@
 #' @export
 #'
 #' @examples
-ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
-                           method.scaling = "robust.scaler",
+ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method.scaling = "robust.scaler",
+                           construct.scaling = "robust.scaler", independent = TRUE, independent.reference = FALSE, independent.PPIdf = FALSE,
                            iter.scaler = TRUE, range = c(0.25, 0.75), data.scaling = "main",
                            negative.reference = c("RRS", "inter-complex"),
-                           assay = c("mean_cBRET", "mean_mCit"), all.configurations = TRUE,
-                           sampling = "weighted", weightBy = "mean_cBRET", weightHi = TRUE,
+                           assay = c("mean_cBRET", "mean_mCit"),
+                           sampling = "unweighted", weightBy = "mean_cBRET", weightHi = TRUE,
                            model.type = "svm", kernelType = "linear", svm.parameters = FALSE, C = 100, gamma = NULL, coef0 = 0, degree = 2,
                            ensembleSize = 50, top = NULL, inclusion = NULL, cutoff = "median", iter = 5, verbose = TRUE) {
 
@@ -149,7 +151,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
 
   #check PPI test set
   if(is.null(PPIdf)) {
-    stop("No user PPI test-dataset loaded: LuTHy reference set used as test set")
+    stop("User must provide a PPIdf test-dataset")
   } else {
     base::message("User-defined PPI test-dataset provided.")
     PPIdf <- PPIdf %>%
@@ -173,104 +175,11 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
   }
 
   #check for the method to scale the data
-  if(method.scaling == "none") {
-    base::message("Data of the training and test sets are not scaled.")
+  if(construct.scaling == "none") {
+    base::message("Data of the training and test sets are not scaled by construct.")
   }
-  if(method.scaling %ni% c("none", "standardize", "robust.scaler", "construct", "orientation")) {
-    stop("Invalid 'method.scaling'. Choose between 'none', 'standardize', 'robust.scaler', 'construct' or 'orientation'.")
-  }
-
-  #z-score scale data to compare data measured at different plate readers
-  if(method.scaling == "standardize") {
-    if(verbose)
-      base::message("Reference-set is z-score scaled.")
-    for(i in assay.scaling) {
-      referenceSet <- referenceSet %>%
-        dplyr::filter(data %in% assay) %>%
-        tidyr::pivot_wider(names_from = data, values_from = score) %>%
-        dplyr::mutate(!!(rlang::sym(assay[1])) := scale(!!(rlang::sym(assay[1])))) %>%
-        tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
-    }
-  }
-
-  #construct normalization
-  if(method.scaling == "construct") {
-    #stop("This function is under construction")
-    if(donor.n == FALSE | acceptor.n == FALSE) {
-      base::message("'Donor' and 'Acceptor' constructs in the reference set are normalized for their median + 3SD.")
-      for(i in assay.scaling) {
-        scaler.global <- stats::median(referenceSet %>%
-                                         tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-                                         dplyr::pull(i),
-                                       na.rm = TRUE)
-        mean.global <- base::mean(referenceSet %>%
-                                    tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-                                    dplyr::pull(i),
-                                  na.rm = TRUE)
-        sd.global <- stats::sd(referenceSet %>%
-                                 tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-                                 dplyr::pull(i),
-                               na.rm = TRUE)
-        donor.cf <- referenceSet %>%
-          dplyr::filter(data %in% assay) %>%
-          tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-          dplyr::group_by(Donor) %>%
-          dplyr::summarise(median = stats::median(!!(rlang::sym(i)), na.rm = TRUE),
-                           mean = base::mean(!!(rlang::sym(i)), na.rm = TRUE),
-                           sd = stats::sd(!!(rlang::sym(i)), na.rm = TRUE)) %>%
-          dplyr::mutate(cf.donor = median - scaler.global)
-        referenceSet <- referenceSet %>%
-          dplyr::filter(data %in% assay) %>%
-          tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-          dplyr::left_join(donor.cf %>% dplyr::select(Donor, cf.donor), by = "Donor") %>%
-          dplyr::mutate(!!(rlang::sym(i)) := !!(rlang::sym(i)) - cf.donor, .keep = "unused")
-        acceptor.cf <- referenceSet %>%
-          dplyr::group_by(Acceptor) %>%
-          dplyr::summarise(median = stats::median(!!(rlang::sym(i)), na.rm = TRUE),
-                           mean = base::mean(!!(rlang::sym(i)), na.rm = TRUE),
-                           sd = stats::sd(!!(rlang::sym(i)), na.rm = TRUE)) %>%
-          dplyr::mutate(cf.acceptor = median - scaler.global)
-        referenceSet <- referenceSet %>%
-          dplyr::left_join(acceptor.cf %>% dplyr::select(Acceptor, cf.acceptor), by = "Acceptor") %>%
-          dplyr::mutate(!!(rlang::sym(i)) := !!(rlang::sym(i)) - cf.acceptor, .keep = "unused") %>%
-          tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
-      }
-    } else(base::message("Not enough 'Donor' and 'Acceptor' constructs in the reference set to construct normalize."))
-
-  }
-
-  #orientation normalization
-  if(method.scaling == "orientation") {
-    base::message("median scaling the reference set by orientation.")
-    for(i in assay.scaling) {
-      scaler.global <- stats::median(referenceSet %>%
-                                       tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-                                       dplyr::pull(i),
-                                     na.rm = TRUE)
-      mean.global <- base::mean(referenceSet %>%
-                                  tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-                                  dplyr::pull(i),
-                                na.rm = TRUE)
-      sd.global <- stats::sd(referenceSet %>%
-                               tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-                               dplyr::pull(i),
-                             na.rm = TRUE)
-      orientation.cf <- referenceSet %>%
-        dplyr::filter(data %in% assay) %>%
-        tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-        dplyr::group_by(orientation) %>%
-        dplyr::summarise(median = stats::median(!!(rlang::sym(i)), na.rm = TRUE),
-                         mean = base::mean(!!(rlang::sym(i)), na.rm = TRUE),
-                         sd = stats::sd(!!(rlang::sym(i)), na.rm = TRUE)) %>%
-        dplyr::mutate(cf = median - scaler.global)
-      referenceSet <- referenceSet %>%
-        dplyr::filter(data %in% assay) %>%
-        tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-        dplyr::left_join(orientation.cf %>%
-                           dplyr::select(orientation, cf), by = "orientation") %>%
-        dplyr::mutate(!!(rlang::sym(i)) := !!(rlang::sym(i)) - cf, .keep = "unused") %>%
-        tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
-    }
+  if(construct.scaling %ni% c("none", "robust.scaler")) {
+    stop("Invalid 'construct.scaling'. Choose between 'none', or 'robust.scaler'.")
   }
 
   #robust scaler for each donor and acceptor construct: scaling to median and quantile
@@ -289,7 +198,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
                                     PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score")  %>% dplyr::pull(j)), na.rm = TRUE,
                                   range = range)
   }
-  if(method.scaling == "robust.scaler") {
+  if(construct.scaling == "robust.scaler") {
     for(j in assay.scaling) {
       if(any(donor.n$n >= 20) == FALSE | any(acceptor.n$n >= 20) == FALSE) {
         base::message("Not enough 'Donor' and 'Acceptor' constructs in the provided 'reference.set' to perform robust scaler.")
@@ -408,106 +317,45 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
 
   }
 
-  #use all configurations/orientations used to measure "one" interactions
-  if(all.configurations == FALSE) {
-    if(verbose)
-      base::message("Only the highest scoring orientation for each interaction is used for the reference set.")
-    for(j in assay.scaling) {
+  assertthat::assert_that(method.scaling %in% c("robust.scaler", "standard.scaler", 'none'),
+                          msg = "Invalid method.scaling. Choose between 'robust.scaler', 'standard.scaler' or 'none'.")
+
+  #scale the reference set if it is composed of multiple independent data sets
+  if(independent.reference == TRUE) {
+    assertthat::assert_that('dataset' %in% colnames(referenceSet), msg = "No 'dataset' column in the referenceSet to group by. Set 'independent.reference == FALSE' or provide 'dataset' column to group by.")
+    message(paste0(method.scaling, " normalization is performed to merge the independent reference sets specified by the 'dataset' column."))
+    if(method.scaling == "robust.scaler") {
+      reference.scaler <- referenceSet %>%
+        dplyr::group_by(dataset, data) %>%
+        dplyr::summarise(median = median(score, na.rm = TRUE),
+                         iqr = IQR(score, na.rm = TRUE)) %>%
+        dplyr::ungroup()
+
       referenceSet <- referenceSet %>%
-        dplyr::filter(data %in% j) %>%
-        tidyr::pivot_wider(names_from = data, values_from = score) %>%
-        dplyr::group_by(complex, interaction) %>%
-        dplyr::summarise(!!(rlang::sym(j)) := max(!!(rlang::sym(j)), na.rm = TRUE)) %>%
+        dplyr::group_by(dataset, data) %>%
+        dplyr::left_join(reference.scaler, by=c("dataset", "data")) %>%
+        dplyr::rowwise() %>%
+        dplyr::group_by(dataset, data) %>%
+        dplyr::mutate(score = (score - median) / iqr) %>%
         dplyr::ungroup() %>%
-        dplyr::left_join(referenceSet %>%
-                    dplyr::filter(data == j) %>%
-                    tidyr::pivot_wider(names_from = data, values_from = score),
-                  by = c("complex", "interaction", j)) %>%
-        tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
+        dplyr::select(-median, -iqr)
     }
+    if(method.scaling == "standard.scaler") {
+      referenceSet <- referenceSet %>%
+        dplyr::group_by(dataset, data) %>%
+        dplyr::mutate(score = base::as.numeric(base::scale(score))) %>%
+        dplyr::ungroup()
+    }
+
   }
 
+  #use all configurations/orientations used to measure "one" interactions
   donor.n <- PPIdf %>% dplyr::filter(data == assay[1]) %>% dplyr::group_by(Donor) %>% dplyr::count()
   acceptor.n <- PPIdf %>% dplyr::filter(data == assay[1]) %>% dplyr::group_by(Acceptor) %>% dplyr::count()
 
-  #z-score scaling of test set
-  if(method.scaling == "standardize") {
-    if(verbose)
-      base::message("Test-set is z-score scaled.")
-    for(i in assay.scaling) {
-      PPIdf <- PPIdf %>%
-        dplyr::filter(data %in% assay) %>%
-        tidyr::pivot_wider(names_from = data, values_from = score) %>%
-        dplyr::mutate(!!(rlang::sym(i)) := scale(!!(rlang::sym(i)))) %>%
-        tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
-    }
-  }
-
-  #construct normalization
-  if(method.scaling == "construct") {
-    #stop("This function is under construction")
-    if(donor.n == FALSE | acceptor.n == FALSE) {
-      base::message("'Donor' and 'Acceptor' constructs in the reference set are normalized for their median + 3SD.")
-      for(i in assay.scaling) {
-        scaler.global <- stats::median(PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(i), na.rm = TRUE)
-        mean.global <- base::mean(PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(i), na.rm = TRUE)
-        sd.global <- stats::sd(PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(i), na.rm = TRUE)
-        donor.cf <- PPIdf %>%
-          dplyr::filter(data %in% assay) %>%
-          tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-          dplyr::group_by(Donor) %>%
-          dplyr::summarise(median = stats::median(!!(rlang::sym(i)), na.rm = TRUE),
-                           mean = base::mean(!!(rlang::sym(i)), na.rm = TRUE),
-                           sd = stats::sd(!!(rlang::sym(i)), na.rm = TRUE)) %>%
-          dplyr::mutate(cf.donor = median - scaler.global)
-        PPIdf <- PPIdf %>%
-          dplyr::filter(data %in% assay) %>%
-          tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-          dplyr::left_join(donor.cf %>% dplyr::select(Donor, cf.donor), by = "Donor") %>%
-          dplyr::mutate(!!(rlang::sym(i)) := !!(rlang::sym(i)) - cf.donor, .keep = "unused")
-        acceptor.cf <- PPIdf %>%
-          dplyr::group_by(Acceptor) %>%
-          dplyr::summarise(median = stats::median(!!(rlang::sym(i)), na.rm = TRUE),
-                           mean = base::mean(!!(rlang::sym(i)), na.rm = TRUE),
-                           sd = stats::sd(!!(rlang::sym(i)), na.rm = TRUE)) %>%
-          dplyr::mutate(cf.acceptor = median - scaler.global)
-        PPIdf <- PPIdf %>%
-          dplyr::left_join(acceptor.cf %>% dplyr::select(Acceptor, cf.acceptor), by = "Acceptor") %>%
-          dplyr::mutate(!!(rlang::sym(i)) := !!(rlang::sym(i)) - cf.acceptor, .keep = "unused") %>%
-          tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
-      }
-    } else(base::message("Not enough 'Donor' and 'Acceptor' constructs in the reference set to construct normalize."))
-
-  }
-
-  #orientation normalization
-  if(method.scaling == "orientation") {
-    base::message("median scaling the test set by orientation.")
-    for(i in assay.scaling) {
-      scaler.global <- stats::median(PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(i), na.rm = TRUE)
-      mean.global <- base::mean(PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(i), na.rm = TRUE)
-      sd.global <- stats::sd(PPIdf %>% tidyr::pivot_wider(names_from = "data", values_from = "score") %>% dplyr::pull(i), na.rm = TRUE)
-      orientation.cf <- PPIdf %>%
-        dplyr::filter(data %in% assay) %>%
-        tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-        dplyr::group_by(orientation) %>%
-        dplyr::summarise(median = stats::median(!!(rlang::sym(i)), na.rm = TRUE),
-                         mean = base::mean(!!(rlang::sym(i)), na.rm = TRUE),
-                         sd = stats::sd(!!(rlang::sym(i)), na.rm = TRUE)) %>%
-        dplyr::mutate(cf = median - scaler.global)
-      PPIdf <- PPIdf %>%
-        dplyr::filter(data %in% assay) %>%
-        tidyr::pivot_wider(names_from = "data", values_from = "score") %>%
-        dplyr::left_join(orientation.cf %>% dplyr::select(orientation, cf), by = "orientation") %>%
-        dplyr::mutate(!!(rlang::sym(i)) := !!(rlang::sym(i)) - cf, .keep = "unused") %>%
-        tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
-    }
-  }
-
   #robust scaler for each donor and acceptor construct: scaling to median and quantile
   PPIdf.list <- c()
-
-  if(method.scaling == "robust.scaler") {
+  if(construct.scaling == "robust.scaler") {
     for(j in assay.scaling) {
 
       if(any(donor.n$n >= 20) == FALSE | any(acceptor.n$n >= 20) == FALSE) {
@@ -627,24 +475,85 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
       base::rbind(PPIdf.unscaled)
   }
 
-  #test all or highest scoring configurations per interaction
-  if(all.configurations == FALSE) {
-    if(verbose)
-      base::message("Only the highest scoring orientation for each interaction is used for the test set.")
+  #scale the PPIdf dataset if it is composed of multiple independent data sets
+  if(independent.PPIdf == TRUE) {
+    assertthat::assert_that('dataset' %in% colnames(PPIdf), msg = "No 'dataset' column in the PPIdf to group by. Set 'indepdent.PPIdf == FALSE' or provide 'dataset' column to group by.")
+    message(paste0(method.scaling, " normalization is performed to merge the independent PPIdf data sets specified by the 'dataset' column."))
+    if(method.scaling == "robust.scaler") {
+      PPIdf.scaler <- PPIdf %>%
+        dplyr::group_by(dataset, data) %>%
+        dplyr::summarise(median = median(score, na.rm = TRUE),
+                         iqr = IQR(score, na.rm = TRUE)) %>%
+        ungroup()
 
-    for(j in assay.scaling) {
       PPIdf <- PPIdf %>%
-        dplyr::filter(data %in% j) %>%
-        tidyr::pivot_wider(names_from = data, values_from = score) %>%
-        dplyr::group_by(complex, interaction) %>%
-        dplyr::summarise(!!(rlang::sym(j)) := max(!!(rlang::sym(j)), na.rm = TRUE)) %>%
-        dplyr::ungroup() %>%
-        dplyr::left_join(PPIdf %>%
-                    dplyr::filter(data %in% j) %>%
-                    tidyr::pivot_wider(names_from = data, values_from = score),
-                  by = c("complex", "interaction", j)) %>%
-        dplyr::filter(is.finite(!!(rlang::sym(assay[1])))) %>%
-        tidyr::pivot_longer(cols = assay, names_to = "data", values_to = "score")
+        dplyr::group_by(dataset, data) %>%
+        left_join(PPIdf.scaler, by=c("dataset", "data")) %>%
+        rowwise() %>%
+        group_by(dataset, data) %>%
+        dplyr::mutate(score = (score - median) / iqr) %>%
+        ungroup() %>%
+        dplyr::select(-median, -iqr)
+    }
+    if(method.scaling == "standard.scaler") {
+      PPIdf <- PPIdf %>%
+        dplyr::group_by(dataset, data) %>%
+        dplyr::mutate(score = base::as.numeric(base::scale(score))) %>%
+        dplyr::ungroup()
+    }
+  }
+
+  #scale the reference and PPIdf if they are from independent experiments
+  if(independent == TRUE) {
+    message(paste0(method.scaling, " normalization is performed to scale the reference and the PPIdf data sets."))
+    if(independent.reference == FALSE) {
+      if(method.scaling == "robust.scaler") {
+        reference.scaler <- referenceSet %>%
+          dplyr::group_by(data) %>%
+          dplyr::summarise(median = median(score, na.rm = TRUE),
+                           iqr = IQR(score, na.rm = TRUE)) %>%
+          ungroup()
+
+        referenceSet <- referenceSet %>%
+          dplyr::group_by(data) %>%
+          left_join(reference.scaler, by=c("data")) %>%
+          rowwise() %>%
+          group_by(data) %>%
+          dplyr::mutate(score = (score - median) / iqr) %>%
+          ungroup() %>%
+          dplyr::select(-median, -iqr)
+      }
+      if(method.scaling == "standard.scaler") {
+        referenceSet <- referenceSet %>%
+          dplyr::group_by(data) %>%
+          dplyr::mutate(score = base::as.numeric(base::scale(score))) %>%
+          dplyr::ungroup()
+      }
+
+    }
+    if(independent.PPIdf == FALSE) {
+      if(method.scaling == "robust.scaler") {
+        PPIdf.scaler <- PPIdf %>%
+          dplyr::group_by(data) %>%
+          dplyr::summarise(median = median(score, na.rm = TRUE),
+                           iqr = IQR(score, na.rm = TRUE)) %>%
+          ungroup()
+
+        PPIdf <- PPIdf %>%
+          dplyr::group_by(data) %>%
+          left_join(PPIdf.scaler, by=c("data")) %>%
+          rowwise() %>%
+          group_by(data) %>%
+          dplyr::mutate(score = (score - median) / iqr) %>%
+          ungroup() %>%
+          dplyr::select(-median, -iqr)
+      }
+      if(method.scaling == "standard.scaler") {
+        PPIdf <- PPIdf %>%
+          dplyr::group_by(data) %>%
+          dplyr::mutate(score = base::as.numeric(base::scale(score))) %>%
+          dplyr::ungroup()
+      }
     }
   }
 
@@ -915,6 +824,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555,
   return(list(assay = assay,
               predTrainDf = predTrainDf,
               predDf = predDf,
+              construct.scaling = construct.scaling,
+              method.scaling = method.scaling,
               training.sets = training.sets,
               testMat = testMat,
               predTrain.model.e = predTrain.model.e,
