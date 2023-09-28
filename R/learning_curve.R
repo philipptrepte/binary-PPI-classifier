@@ -29,9 +29,9 @@ learning.curve <- function(ppi_prediction_result, train_sizes = base::seq(0.1, 1
   test_data_labels <- test_data %>%
     dplyr::pull(reference)
 
-  if(!any(sapply(ppi_prediction_result$negative.reference, function(x) any(str_detect(test_data_labels, x))))) {
-    stop("The test data must contain positive and negative reference interactions.")
-  }
+  assertthat::assert_that(any(sapply(ppi_prediction_result$negative.reference, function(x) any(str_detect(test_data_labels, x), str_detect(test_data$complex, x)))),
+                          msg = "The test data must contain positive and negative reference interactions.")
+
   negative_reference = ppi_prediction_result$negative.reference
   if(models == "all") {
     n.models = base::seq(ppi_prediction_result$model.e)
