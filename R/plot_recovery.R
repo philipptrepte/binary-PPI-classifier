@@ -6,11 +6,14 @@
 #' @import ggpubr
 #'
 #' @param ppi_prediction_result: result object from the ppi.prediction() function.
+#' @param set: PPI set to generate the plot for: "test" or "train"
 #'
 #' @return a ggplot2 object
 #' @export
 #'
 #' @examples
+#' data("example_ppi_prediction")
+#' recovery.plot(example_ppi_prediction)
 recovery.plot <- function(ppi_prediction_result, set="test") {
   assertthat::assert_that(set %in% c("test", "train"), msg = "'set=' must be 'test' or 'train'.")
   if(set == "test") {

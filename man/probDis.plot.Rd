@@ -4,14 +4,20 @@
 \alias{probDis.plot}
 \title{Plot a scatter plot of the probability distribution against the primary assay feature}
 \usage{
-probDis.plot(ppi_prediction_result)
+probDis.plot(ppi_prediction_result, set = "test")
 }
 \arguments{
 \item{ppi_prediction_result:}{result object from the ppi.prediction() function.}
+
+\item{set:}{PPI set to generate the plot for: "test" or "train"}
 }
 \value{
 a ggplot2 object
 }
 \description{
 Plot a scatter plot of the probability distribution against the primary assay feature
+}
+\examples{
+data("example_ppi_prediction")
+probDis.plot(example_ppi_prediction)
 }

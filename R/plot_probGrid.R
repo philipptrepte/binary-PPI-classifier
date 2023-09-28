@@ -13,11 +13,14 @@
 #' @param x.log.scale: boolean to log-scale x-axis values
 #' @param xlim: numeric values, specifying the left and right limit of the scale
 #' @param ylim: numeric values, specifying the bottom and top limit of the scale
+#' @param set: PPI set to generate the plot for: "test" or "train"
 #'
 #' @return a ggplot2 object
 #' @export
 #'
 #' @examples
+#' data("example_ppi_prediction")
+#' probGrid.plot(example_ppi_prediction)
 probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim = c(0,NA), ylim = NULL, set="train") {
   assertthat::assert_that(set %in% c("test", "train"), msg = "'set=' must be 'test' or 'train'.")
   if(set == "test") {

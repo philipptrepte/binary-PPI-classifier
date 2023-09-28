@@ -8,8 +8,9 @@ probGrid.plot(
   ppi_prediction_result,
   n = 100,
   x.log.scale = TRUE,
-  xlim = NULL,
-  ylim = NULL
+  xlim = c(0, NA),
+  ylim = NULL,
+  set = "train"
 )
 }
 \arguments{
@@ -22,10 +23,16 @@ probGrid.plot(
 \item{xlim:}{numeric values, specifying the left and right limit of the scale}
 
 \item{ylim:}{numeric values, specifying the bottom and top limit of the scale}
+
+\item{set:}{PPI set to generate the plot for: "test" or "train"}
 }
 \value{
 a ggplot2 object
 }
 \description{
 Plot a probability grid from the mean probabilities from the 'ensembleSize' number of models
+}
+\examples{
+data("example_ppi_prediction")
+probGrid.plot(example_ppi_prediction)
 }

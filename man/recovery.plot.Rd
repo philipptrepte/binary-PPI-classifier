@@ -4,14 +4,20 @@
 \alias{recovery.plot}
 \title{Plot a bar diagram of the recovery rates at 50\%, 75\% and 95\% probability}
 \usage{
-recovery.plot(ppi_prediction_result)
+recovery.plot(ppi_prediction_result, set = "test")
 }
 \arguments{
 \item{ppi_prediction_result:}{result object from the ppi.prediction() function.}
+
+\item{set:}{PPI set to generate the plot for: "test" or "train"}
 }
 \value{
 a ggplot2 object
 }
 \description{
 Plot a bar diagram of the recovery rates at 50\%, 75\% and 95\% probability
+}
+\examples{
+data("example_ppi_prediction")
+recovery.plot(example_ppi_prediction)
 }
