@@ -346,7 +346,10 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
         dplyr::mutate(score = base::as.numeric(base::scale(score))) %>%
         dplyr::ungroup()
     }
-
+    # check that PPIdf is also scaled
+    if(independent.PPIdf == FALSE & independent == FALSE) {
+      independent <- TRUE
+    }
   }
 
   #use all configurations/orientations used to measure "one" interactions
@@ -477,7 +480,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
 
   #scale the PPIdf dataset if it is composed of multiple independent data sets
   if(independent.PPIdf == TRUE) {
-    assertthat::assert_that('dataset' %in% colnames(PPIdf), msg = "No 'dataset' column in the PPIdf to group by. Set 'indepdent.PPIdf == FALSE' or provide 'dataset' column to group by.")
+    assertthat::assert_that('dataset' %in% colnames(PPIdf), msg = "No 'dataset' column in the PPIdf to group by. Set 'independent.PPIdf == FALSE' or provide 'dataset' column to group by.")
     message(paste0(method.scaling, " normalization is performed to merge the independent PPIdf data sets specified by the 'dataset' column."))
     if(method.scaling == "robust.scaler") {
       PPIdf.scaler <- PPIdf %>%
@@ -500,6 +503,10 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
         dplyr::group_by(dataset, data) %>%
         dplyr::mutate(score = base::as.numeric(base::scale(score))) %>%
         dplyr::ungroup()
+    }
+    # check that PPIdf is also scaled
+    if(independent.reference == FALSE & independent == FALSE) {
+      independent <- TRUE
     }
   }
 
@@ -832,7 +839,6 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
               model.e = model.e,
               negative.reference = negative.reference,
               model.type = model.type,
-              label = cls,
               cutoff = cutoff,
               top = top,
               inclusion = inclusion,
