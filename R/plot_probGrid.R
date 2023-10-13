@@ -105,6 +105,8 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
 
   #calculate ygrid for a specific model
   if (model %in% seq_along(ppi_prediction_result$model.e)) {
+    ygrid <- base::data.frame(base::matrix(nrow = base::nrow(xgrid),ncol = 0))
+    ygrid.prob <- base::data.frame(base::matrix(nrow = base::nrow(xgrid),ncol = 0))
     ygrid = data.frame(ygrid = stats::predict(ppi_prediction_result$model.e[[model]], xgrid))
     ygrid.prob = base::cbind(ygrid.prob, attr(stats::predict(ppi_prediction_result$model.e[[model]],
                                                              xgrid, probability = TRUE), "probabilities")[, 1])
