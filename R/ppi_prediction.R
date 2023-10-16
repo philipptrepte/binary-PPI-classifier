@@ -11,7 +11,8 @@
 #' @param referenceSet: reference PPI data set containing reference interactions used to train the svm models
 #' @param seed: set seed
 #' @param construct.scaling: accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"
-#' @param independent: logical; are the referenceSet and PPIdf independent datasets? If TRUE a 'robust.scaler' normalization is performed
+#' @param scale: logical; If TRUE a 'robust.scaler' or 'standard.scaler' normalization is performed as specified under method.scaling
+#' @param method.scaling: method to scale the data. Choose between 'robust.scaler' or 'standard.scaler'.
 #' @param independent.reference: logical; is the referenceSet a collection of independently collected reference sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct reference sets indicated by a column 'dataset'
 #' @param independent.PPIdf: logical; is the PPIdf a collection of independently collected data sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct data sets indicated by a column 'dataset'
 #' @param iter.scaler: if TRUE and when using "robust.scaler" it iteratively performs robust scaler normalization until the IQR of each construct is within the IQR of all loaded data sets
@@ -41,7 +42,7 @@
 #'
 #' @examples
 ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method.scaling = "robust.scaler",
-                           construct.scaling = "robust.scaler", independent = TRUE, independent.reference = FALSE, independent.PPIdf = FALSE,
+                           construct.scaling = "robust.scaler", scale = TRUE, independent.reference = FALSE, independent.PPIdf = FALSE,
                            iter.scaler = TRUE, range = c(0.25, 0.75), data.scaling = "main",
                            negative.reference = c("RRS", "inter-complex"),
                            assay = c("mean_cBRET", "mean_mCit"),
@@ -68,7 +69,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
       }
 
       if (model.type == "svm") {
-        model <- e1071::svm(Y ~ ., data = data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0)
+        model <- e1071::svm(Y ~ ., data = data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0, scale = ifelse(scale == TRUE, FALSE, TRUE))
         pred.train <- stats::predict(model, train.mat, decision.values = TRUE, probability = TRUE)
         pred.mat <- attr(pred.train, "probabilities")
       } else if (model.type == "randomforest") {
@@ -347,8 +348,8 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
         dplyr::ungroup()
     }
     # check that PPIdf is also scaled
-    if(independent.PPIdf == FALSE & independent == FALSE) {
-      independent <- TRUE
+    if(independent.PPIdf == FALSE & scale == FALSE) {
+      scale <- TRUE
     }
   }
 
@@ -505,13 +506,13 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
         dplyr::ungroup()
     }
     # check that PPIdf is also scaled
-    if(independent.reference == FALSE & independent == FALSE) {
-      independent <- TRUE
+    if(independent.reference == FALSE & scale == FALSE) {
+      scale <- TRUE
     }
   }
 
   #scale the reference and PPIdf if they are from independent experiments
-  if(independent == TRUE) {
+  if(scale == TRUE) {
     message(paste0(method.scaling, " normalization is performed to scale the reference and the PPIdf data sets."))
     if(independent.reference == FALSE) {
       if(method.scaling == "robust.scaler") {
@@ -606,7 +607,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
     base::message("Calculating best parameters for ", shQuote(kernelType)," kernel type. \n")
     tune.y <- base::factor(stringr::str_extract(base::rownames(TrainTestMat), "PRS|RRS"))
     names(tune.y) <- base::rownames(TrainTestMat)
-    tune.out <- e1071::tune.svm(x = TrainTestMat, y = tune.y,
+    tune.out <- e1071::tune.svm(x = TrainTestMat, y = tune.y, scale = ifelse(scale == TRUE, FALSE, TRUE),
                                 type = "C-classification", kernel = kernelType,
                                 cost = 10^(-1:2),
                                 gamma = base::ifelse(kernelType == "linear", 0, 10^(-4:1)),
