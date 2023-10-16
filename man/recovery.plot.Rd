@@ -4,12 +4,21 @@
 \alias{recovery.plot}
 \title{Plot a bar diagram of the recovery rates at 50\%, 75\% and 95\% probability}
 \usage{
-recovery.plot(ppi_prediction_result, set = "test")
+recovery.plot(
+  ppi_prediction_result,
+  set = "train",
+  y = "count",
+  groupby = "reference"
+)
 }
 \arguments{
 \item{ppi_prediction_result:}{result object from the ppi.prediction() function.}
 
 \item{set:}{PPI set to generate the plot for: "test" or "train"}
+
+\item{y:}{specify to plot number ('count') or fraction ('frac') of positive interactions}
+
+\item{groupby:}{for the training set group by reference or complex}
 }
 \value{
 a ggplot2 object

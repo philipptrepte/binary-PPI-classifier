@@ -8,23 +8,36 @@ probGrid.plot(
   ppi_prediction_result,
   n = 100,
   x.log.scale = TRUE,
-  xlim = c(0, NA),
+  xlim = c(NA, NA),
   ylim = NULL,
-  set = "train"
+  set = "train",
+  model = "all",
+  training_set = "all",
+  x.nudge = 1,
+  type = "2D",
+  assay = ppi_prediction_result$assay
 )
 }
 \arguments{
 \item{ppi_prediction_result:}{result object from the ppi.prediction() function.}
 
-\item{n:}{grid size}
+\item{n:}{grid size. For 3 assays, will be limited to grid size of 40 to reduce computing time.}
 
-\item{x.log.scale:}{boolean to log-scale x-axis values}
+\item{x.log.scale:}{logical to log-scale x-axis values}
 
-\item{xlim:}{numeric values, specifying the left and right limit of the scale}
+\item{xlim:}{Numeric vector of two values specifying the left and right limit of the scale}
 
-\item{ylim:}{numeric values, specifying the bottom and top limit of the scale}
+\item{ylim:}{Numeric vector of two values specifying the bottom and top limit of the scale}
 
-\item{set:}{PPI set to generate the plot for: "test" or "train"}
+\item{set:}{Character. PPI set to generate the plot for: "test" or "train"}
+
+\item{model:}{Integer (1L) or "all". Plots the decision boundaries for a specific model (e.g. 1L for model 1) or the mean of all models.}
+
+\item{x.nudge:}{Numerical. Which value to add to log transformation of x-axis values, in case of negative x values.}
+
+\item{type:}{Character. Specify to plot as "2D" or "3D" plot for trainings with 3 features.}
+
+\item{assay:}{Character. Specifies which assays to plot against each other. Must be one of the training features.}
 }
 \value{
 a ggplot2 object

@@ -6,6 +6,7 @@
 #'
 #' @param ppi_prediction_result: result object from the ppi.prediction() function.
 #' @param set: PPI set to generate the plot for: "test" or "train"
+#' @param assay: specify which training feature to plot against the probability
 #'
 #' @return a ggplot2 object
 #' @export

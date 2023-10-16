@@ -9,13 +9,16 @@ ppi.prediction(
   referenceSet = NULL,
   seed = 555,
   method.scaling = "robust.scaler",
+  construct.scaling = "robust.scaler",
+  scale = TRUE,
+  independent.reference = FALSE,
+  independent.PPIdf = FALSE,
   iter.scaler = TRUE,
   range = c(0.25, 0.75),
   data.scaling = "main",
   negative.reference = c("RRS", "inter-complex"),
   assay = c("mean_cBRET", "mean_mCit"),
-  all.configurations = TRUE,
-  sampling = "weighted",
+  sampling = "unweighted",
   weightBy = "mean_cBRET",
   weightHi = TRUE,
   model.type = "svm",
@@ -40,19 +43,25 @@ ppi.prediction(
 
 \item{seed:}{set seed}
 
-\item{method.scaling:}{accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"}
+\item{construct.scaling:}{accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"}
+
+\item{scale:}{logical; If TRUE a 'robust.scaler' or 'standard.scaler' normalization is performed as specified under method.scaling}
+
+\item{method.scaling:}{method to scale the data. Choose between 'robust.scaler' or 'standard.scaler'.}
+
+\item{independent.reference:}{logical; is the referenceSet a collection of independently collected reference sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct reference sets indicated by a column 'dataset'}
+
+\item{independent.PPIdf:}{logical; is the PPIdf a collection of independently collected data sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct data sets indicated by a column 'dataset'}
 
 \item{iter.scaler:}{if TRUE and when using "robust.scaler" it iteratively performs robust scaler normalization until the IQR of each construct is within the IQR of all loaded data sets}
 
 \item{range:}{IQR range used in "robust.scaler"}
 
-\item{data.scaling:}{speficies which data provided under 'assay' is scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.}
+\item{data.scaling:}{speficies for which 'assay' the construcst are scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.}
 
 \item{negative.reference:}{string in the column "complex" to specify the negative/random interactions}
 
 \item{assay:}{assay parameters used for training}
-
-\item{all.configurations:}{if TRUE all orientations for each interactions are used; if FALSE only the highest scoring orientation for each interaction is used}
 
 \item{sampling:}{use "weighted" or "unweighted" sampling to generate the independent training sets}
 

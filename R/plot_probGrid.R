@@ -9,12 +9,15 @@
 #' @import ggnewscale
 #'
 #' @param ppi_prediction_result: result object from the ppi.prediction() function.
-#' @param n: grid size
-#' @param x.log.scale: boolean to log-scale x-axis values
-#' @param xlim: numeric values, specifying the left and right limit of the scale
-#' @param ylim: numeric values, specifying the bottom and top limit of the scale
-#' @param set: PPI set to generate the plot for: "test" or "train"
+#' @param n: grid size. For 3 assays, will be limited to grid size of 40 to reduce computing time.
+#' @param x.log.scale: logical to log-scale x-axis values
+#' @param xlim: Numeric vector of two values specifying the left and right limit of the scale
+#' @param ylim: Numeric vector of two values specifying the bottom and top limit of the scale
+#' @param set: Character. PPI set to generate the plot for: "test" or "train"
 #' @param model: Integer (1L) or "all". Plots the decision boundaries for a specific model (e.g. 1L for model 1) or the mean of all models.
+#' @param x.nudge: Numerical. Which value to add to log transformation of x-axis values, in case of negative x values.
+#' @param type: Character. Specify to plot as "2D" or "3D" plot for trainings with 3 features.
+#' @param assay: Character. Specifies which assays to plot against each other. Must be one of the training features.
 #'
 #' @return a ggplot2 object
 #' @export
@@ -29,6 +32,7 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
   assertthat::assert_that(length(ppi_prediction_result$assay) <= 3, msg = "Plots can only be generated for predictions with a maximum of 3 training features.")
   assertthat::assert_that(is.numeric(x.nudge), msg = "x.nudge must be numerical.")
   assertthat::assert_that(is.character(assay) & all(assay %in% ppi_prediction_result$assay), msg = "assay must be character and used as training features in ppi_prediction_result.")
+  assertthat::assert_that(type %in% c("2D", "3D") & length(ppi_prediction_result$assay) < 3, msg = "`type =` must be either 2D or 3D and can only be applied when trained on 3 features.")
 
   if (length(ppi_prediction_result$assay) == 1) {
     a <- assay[1]
