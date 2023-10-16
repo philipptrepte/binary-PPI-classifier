@@ -104,3 +104,9 @@ Distributed under the MIT License. See `License.md` for more information.
 Philipp Trepte - [philipp.trepte\@imba.oeaw.ac.at](mailto:philipp.trepte@imba.oeaw.ac.at) - [LinkedIn](https://www.linkedin.com/in/philipp-trepte/)
 
 binaryPPIclassifier: <https://github.com/philipptrepte/binary-PPI-classifier>
+
+## Session Info
+
+```{r}
+sessionInfo()
+```

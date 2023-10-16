@@ -105,3 +105,37 @@ Philipp Trepte - <philipp.trepte@imba.oeaw.ac.at> -
 [LinkedIn](https://www.linkedin.com/in/philipp-trepte/)
 
 binaryPPIclassifier: <https://github.com/philipptrepte/binary-PPI-classifier>
+
+## Session Info
+
+``` r
+sessionInfo()
+#> R version 4.2.1 (2022-06-23)
+#> Platform: x86_64-apple-darwin17.0 (64-bit)
+#> Running under: macOS Big Sur ... 10.16
+#> 
+#> Matrix products: default
+#> BLAS:   /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRblas.0.dylib
+#> LAPACK: /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRlapack.dylib
+#> 
+#> locale:
+#> [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+#> 
+#> attached base packages:
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#> [1] knitr_1.40  dplyr_1.1.2 DT_0.24    
+#> 
+#> loaded via a namespace (and not attached):
+#>  [1] pillar_1.9.0      compiler_4.2.1    bslib_0.4.0       jquerylib_0.1.4  
+#>  [5] highr_0.9         tools_4.2.1       digest_0.6.29     jsonlite_1.8.0   
+#>  [9] evaluate_0.16     lifecycle_1.0.3   tibble_3.2.1      pkgconfig_2.0.3  
+#> [13] rlang_1.1.1       cli_3.6.1         rstudioapi_0.14   crosstalk_1.2.0  
+#> [17] yaml_2.3.5        xfun_0.32         fastmap_1.1.0     stringr_1.4.1    
+#> [21] generics_0.1.3    vctrs_0.6.3       htmlwidgets_1.5.4 sass_0.4.2       
+#> [25] webshot_0.5.3     tidyselect_1.2.0  glue_1.6.2        R6_2.5.1         
+#> [29] processx_3.7.0    fansi_1.0.3       rmarkdown_2.16    callr_3.7.2      
+#> [33] magrittr_2.0.3    ps_1.7.1          htmltools_0.5.3   utf8_1.2.2       
+#> [37] stringi_1.7.8     cachem_1.0.6
+```
