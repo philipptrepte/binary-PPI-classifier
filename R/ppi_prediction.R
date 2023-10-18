@@ -45,10 +45,10 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
                            construct.scaling = "robust.scaler", scale = TRUE, independent.reference = FALSE, independent.PPIdf = FALSE,
                            iter.scaler = TRUE, range = c(0.25, 0.75), data.scaling = "main",
                            negative.reference = c("RRS", "inter-complex"),
-                           assay = c("mean_cBRET", "mean_mCit"),
-                           sampling = "unweighted", weightBy = "mean_cBRET", weightHi = TRUE,
+                           assay = c("mean_cBRET", "mean_mCit"), svm.scale = TRUE,
+                           sampling = "unweighted", weightBy = NULL, weightHi = TRUE,
                            model.type = "svm", kernelType = "linear", svm.parameters = FALSE, C = 100, gamma = NULL, coef0 = 0, degree = 2,
-                           ensembleSize = 50, top = NULL, inclusion = NULL, cutoff = "median", iter = 5, verbose = TRUE) {
+                           ensembleSize = 25, top = NULL, inclusion = NULL, cutoff = "all", iter = 5, verbose = TRUE) {
 
   base::set.seed(seed)
   #define functions for multi-adaptive sampling
@@ -69,7 +69,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
       }
 
       if (model.type == "svm") {
-        model <- e1071::svm(Y ~ ., data = data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0, scale = ifelse(scale == TRUE, FALSE, TRUE))
+        model <- e1071::svm(Y ~ ., data = data.frame(tmp, Y), type = "C-classification", kernel = kernelType, probability = TRUE, cost = C, gamma = gamma, degree = degree, coef0 = coef0, scale = svm.scale)
         pred.train <- stats::predict(model, train.mat, decision.values = TRUE, probability = TRUE)
         pred.mat <- attr(pred.train, "probabilities")
       } else if (model.type == "randomforest") {
@@ -607,7 +607,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
     base::message("Calculating best parameters for ", shQuote(kernelType)," kernel type. \n")
     tune.y <- base::factor(stringr::str_extract(base::rownames(TrainTestMat), "PRS|RRS"))
     names(tune.y) <- base::rownames(TrainTestMat)
-    tune.out <- e1071::tune.svm(x = TrainTestMat, y = tune.y, scale = ifelse(scale == TRUE, FALSE, TRUE),
+    tune.out <- e1071::tune.svm(x = TrainTestMat, y = tune.y,
                                 type = "C-classification", kernel = kernelType,
                                 cost = 10^(-1:2),
                                 gamma = base::ifelse(kernelType == "linear", 0, 10^(-4:1)),
@@ -852,3 +852,4 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
               seed = seed,
               system.time = Sys.time()))
 }
+
