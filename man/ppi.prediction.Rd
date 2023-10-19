@@ -18,8 +18,9 @@ ppi.prediction(
   data.scaling = "main",
   negative.reference = c("RRS", "inter-complex"),
   assay = c("mean_cBRET", "mean_mCit"),
+  svm.scale = TRUE,
   sampling = "unweighted",
-  weightBy = "mean_cBRET",
+  weightBy = NULL,
   weightHi = TRUE,
   model.type = "svm",
   kernelType = "linear",
@@ -28,10 +29,10 @@ ppi.prediction(
   gamma = NULL,
   coef0 = 0,
   degree = 2,
-  ensembleSize = 50,
+  ensembleSize = 25,
   top = NULL,
   inclusion = NULL,
-  cutoff = "median",
+  cutoff = "all",
   iter = 5,
   verbose = TRUE
 )
@@ -46,6 +47,8 @@ ppi.prediction(
 \item{construct.scaling:}{accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"}
 
 \item{scale:}{logical; If TRUE a 'robust.scaler' or 'standard.scaler' normalization is performed as specified under method.scaling}
+
+\item{svm.scale:}{logical; controls 'scale' attribute within the e1071::svm function. See ?e1071::svm for details. Set to FALSE if performing 'scale=TRUE' and 'method.scaling="robust.scaler"' normalization.}
 
 \item{method.scaling:}{method to scale the data. Choose between 'robust.scaler' or 'standard.scaler'.}
 

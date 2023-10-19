@@ -12,6 +12,7 @@
 #' @param seed: set seed
 #' @param construct.scaling: accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"
 #' @param scale: logical; If TRUE a 'robust.scaler' or 'standard.scaler' normalization is performed as specified under method.scaling
+#' @param svm.scale: logical; controls 'scale' attribute within the e1071::svm function. See ?e1071::svm for details. Set to FALSE if performing 'scale=TRUE' and 'method.scaling="robust.scaler"' normalization.
 #' @param method.scaling: method to scale the data. Choose between 'robust.scaler' or 'standard.scaler'.
 #' @param independent.reference: logical; is the referenceSet a collection of independently collected reference sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct reference sets indicated by a column 'dataset'
 #' @param independent.PPIdf: logical; is the PPIdf a collection of independently collected data sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct data sets indicated by a column 'dataset'
