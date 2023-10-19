@@ -25,7 +25,7 @@
 #' @examples
 #' data("example_ppi_prediction")
 #' probGrid.plot(example_ppi_prediction)
-probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim = c(NA,NA), ylim = NULL, set="train", model="all", training_set = 'all', x.nudge = 1, type = "2D", assay = ppi_prediction_result$assay) {
+probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = FALSE, xlim = c(NA,NA), ylim = NULL, set="train", model="all", training_set = 'all', x.nudge = 1, type = "2D", assay = ppi_prediction_result$assay) {
   assertthat::assert_that(set %in% c("test", "train"), msg = "'set=' must be 'test' or 'train'.")
   assertthat::assert_that(model == "all" | is.numeric(model) & model %in% seq_along(ppi_prediction_result$model.e), msg = "model must be 'all' or integer")
   assertthat::assert_that(training_set == "all" | is.numeric(training_set) & model %in% seq_along(ppi_prediction_result$ensembleSize), msg = "training set must be 'all' or integer")
@@ -59,7 +59,8 @@ probGrid.plot <- function(ppi_prediction_result, n=100, x.log.scale = TRUE, xlim
   } else if (set == 'test' & any(colnames(ppi_prediction_result$predDf) %in% 'reference')) {
     Df <- ppi_prediction_result$predDf
   } else if (set == 'train' & any(colnames(ppi_prediction_result$predDf) %in% 'reference')) {
-    Df <- ppi_prediction_result$predTrainDf
+    Df <- ppi_prediction_result$predTrainDf %>%
+      dplyr::rename(predMat = predTrainMat)
   }
   if(is.numeric(training_set)) {
     training_set_interactions <- str_split(rownames(ppi_prediction_result$training.sets[[training_set]]), pattern = ";", simplify = TRUE)[,3:5] %>% as_tibble()
