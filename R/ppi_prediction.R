@@ -618,7 +618,7 @@ ppi.prediction <- function(PPIdf = NULL, referenceSet = NULL, seed = 555, method
     C <- tune.out$best.parameters$cost
     coef0 <- tune.out$best.parameters$coef0
     degree <- tune.out$best.parameters$degree
-    base::message("Type: ",  classificationType, "\n",
+    base::message("Type: ",  'C-classification', "\n",
             "kernel: ", kernelType, "\n",
             "Cost: ", C, "\n",
             "gamma: ", gamma, "\n",
