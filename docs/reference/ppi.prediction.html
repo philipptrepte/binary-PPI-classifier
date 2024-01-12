@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">binaryPPIclassifier</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.5.8</span>
       </span>
     </div>
 
@@ -59,14 +59,18 @@
 <span>  referenceSet <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">555</span>,</span>
 <span>  method.scaling <span class="op">=</span> <span class="st">"robust.scaler"</span>,</span>
+<span>  construct.scaling <span class="op">=</span> <span class="st">"robust.scaler"</span>,</span>
+<span>  scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  independent.reference <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  independent.PPIdf <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  iter.scaler <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.75</span><span class="op">)</span>,</span>
 <span>  data.scaling <span class="op">=</span> <span class="st">"main"</span>,</span>
 <span>  negative.reference <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"RRS"</span>, <span class="st">"inter-complex"</span><span class="op">)</span>,</span>
 <span>  assay <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean_cBRET"</span>, <span class="st">"mean_mCit"</span><span class="op">)</span>,</span>
-<span>  all.configurations <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  sampling <span class="op">=</span> <span class="st">"weighted"</span>,</span>
-<span>  weightBy <span class="op">=</span> <span class="st">"mean_cBRET"</span>,</span>
+<span>  svm.scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  sampling <span class="op">=</span> <span class="st">"unweighted"</span>,</span>
+<span>  weightBy <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weightHi <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  model.type <span class="op">=</span> <span class="st">"svm"</span>,</span>
 <span>  kernelType <span class="op">=</span> <span class="st">"linear"</span>,</span>
@@ -75,10 +79,10 @@
 <span>  gamma <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  coef0 <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  degree <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  ensembleSize <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  ensembleSize <span class="op">=</span> <span class="fl">25</span>,</span>
 <span>  top <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  inclusion <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cutoff <span class="op">=</span> <span class="st">"median"</span>,</span>
+<span>  cutoff <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span>  iter <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -98,8 +102,28 @@
 <dd><p>set seed</p></dd>
 
 
-<dt>method.scaling:</dt>
+<dt>construct.scaling:</dt>
 <dd><p>accepted scaling arguments are: "none", "standardize", "robust.scaler", "construct", "orientation"</p></dd>
+
+
+<dt>scale:</dt>
+<dd><p>logical; If TRUE a 'robust.scaler' or 'standard.scaler' normalization is performed as specified under method.scaling</p></dd>
+
+
+<dt>svm.scale:</dt>
+<dd><p>logical; controls 'scale' attribute within the e1071::svm function. See ?e1071::svm for details. Set to FALSE if performing 'scale=TRUE' and 'method.scaling="robust.scaler"' normalization.</p></dd>
+
+
+<dt>method.scaling:</dt>
+<dd><p>method to scale the data. Choose between 'robust.scaler' or 'standard.scaler'.</p></dd>
+
+
+<dt>independent.reference:</dt>
+<dd><p>logical; is the referenceSet a collection of independently collected reference sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct reference sets indicated by a column 'dataset'</p></dd>
+
+
+<dt>independent.PPIdf:</dt>
+<dd><p>logical; is the PPIdf a collection of independently collected data sets? If TRUE, than a 'robust.scaler' normalization is performed on the distinct data sets indicated by a column 'dataset'</p></dd>
 
 
 <dt>iter.scaler:</dt>
@@ -111,7 +135,7 @@
 
 
 <dt>data.scaling:</dt>
-<dd><p>speficies which data provided under 'assay' is scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.</p></dd>
+<dd><p>speficies for which 'assay' the construcst are scaled. When "main" only the first assay is scaled. When "all", all the assays are scaled.</p></dd>
 
 
 <dt>negative.reference:</dt>
@@ -120,10 +144,6 @@
 
 <dt>assay:</dt>
 <dd><p>assay parameters used for training</p></dd>
-
-
-<dt>all.configurations:</dt>
-<dd><p>if TRUE all orientations for each interactions are used; if FALSE only the highest scoring orientation for each interaction is used</p></dd>
 
 
 <dt>sampling:</dt>

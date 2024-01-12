@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">binaryPPIclassifier</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.5.8</span>
       </span>
     </div>
 
@@ -54,13 +54,21 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">probDis.plot</span><span class="op">(</span><span class="va">ppi_prediction_result</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">probDis.plot</span><span class="op">(</span><span class="va">ppi_prediction_result</span>, set <span class="op">=</span> <span class="st">"test"</span>, assay <span class="op">=</span> <span class="st">"mean_cBRET"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>ppi_prediction_result:</dt>
 <dd><p>result object from the ppi.prediction() function.</p></dd>
+
+
+<dt>set:</dt>
+<dd><p>PPI set to generate the plot for: "test" or "train"</p></dd>
+
+
+<dt>assay:</dt>
+<dd><p>specify which training feature to plot against the probability</p></dd>
 
 </dl></div>
     <div id="value">
@@ -70,6 +78,14 @@
 <p>a ggplot2 object</p>
     </div>
 
+    <div id="ref-examples">
+    <h2>Examples</h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"example_ppi_prediction"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">probDis.plot</span><span class="op">(</span><span class="va">example_ppi_prediction</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 91 rows containing missing values (geom_point).</span>
+<span class="r-plt img"><img src="probDis.plot-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
+    </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top"><h2 data-toc-skip>Contents</h2>

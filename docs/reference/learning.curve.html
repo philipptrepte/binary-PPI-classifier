@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">binaryPPIclassifier</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.5.8</span>
       </span>
     </div>
 
@@ -58,7 +58,9 @@
 <span>  <span class="va">ppi_prediction_result</span>,</span>
 <span>  train_sizes <span class="op">=</span> <span class="fu">base</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">1</span>, by <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>,</span>
 <span>  models <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  prob <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  sum_data <span class="op">=</span> <span class="st">"Median"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -69,7 +71,7 @@
 
 
 <dt>train_sizes:</dt>
-<dd><p>base::sequence of fraction of training sizes to be used for calculation from &gt;0 to 1</p></dd>
+<dd><p>sequence of fraction of training sizes to be used for calculation from &gt;0 to 1</p></dd>
 
 
 <dt>models:</dt>
@@ -79,6 +81,14 @@
 <dt>verbose:</dt>
 <dd><p>boolean, prints detailed informations</p></dd>
 
+
+<dt>prob:</dt>
+<dd><p>probability cutoff to calculate accuracy</p></dd>
+
+
+<dt>sum_data:</dt>
+<dd><p>summary statistic to plot: 'Mean', 'Median', or 'None'</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -87,6 +97,62 @@
 <p>a list with elements</p>
     </div>
 
+    <div id="ref-examples">
+    <h2>Examples</h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"example_ppi_prediction"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">plot</span> <span class="op">&lt;-</span> <span class="fu">learning.curve</span><span class="op">(</span><span class="va">example_ppi_prediction</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 1 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 2 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 3 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 4 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 5 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 6 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 7 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 8 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 9 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 10 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 11 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 12 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 13 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 14 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 15 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 16 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 17 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 18 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 19 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 20 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 21 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 22 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 23 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 24 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 25 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 26 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 27 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 28 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 29 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 30 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 31 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 32 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 33 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 34 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 35 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 36 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 37 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 38 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 39 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 40 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 41 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 42 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 43 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 44 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 45 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 46 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 47 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 48 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 49 completed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> learning curve for model 50 completed.</span>
+</code></pre></div>
+    </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top"><h2 data-toc-skip>Contents</h2>

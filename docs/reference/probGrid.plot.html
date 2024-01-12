@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">binaryPPIclassifier</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.5.8</span>
       </span>
     </div>
 
@@ -58,8 +58,14 @@
 <span>  <span class="va">ppi_prediction_result</span>,</span>
 <span>  n <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  x.log.scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ylim <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>  ylim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  set <span class="op">=</span> <span class="st">"train"</span>,</span>
+<span>  model <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  training_set <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  x.nudge <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"2D"</span>,</span>
+<span>  assay <span class="op">=</span> <span class="va">ppi_prediction_result</span><span class="op">$</span><span class="va">assay</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -70,19 +76,39 @@
 
 
 <dt>n:</dt>
-<dd><p>grid size</p></dd>
+<dd><p>grid size. For 3 assays, will be limited to grid size of 40 to reduce computing time.</p></dd>
 
 
 <dt>x.log.scale:</dt>
-<dd><p>boolean to log-scale x-axis values</p></dd>
+<dd><p>logical to log-scale x-axis values</p></dd>
 
 
 <dt>xlim:</dt>
-<dd><p>numeric values, specifying the left and right limit of the scale</p></dd>
+<dd><p>Numeric vector of two values specifying the left and right limit of the scale</p></dd>
 
 
 <dt>ylim:</dt>
-<dd><p>numeric values, specifying the bottom and top limit of the scale</p></dd>
+<dd><p>Numeric vector of two values specifying the bottom and top limit of the scale</p></dd>
+
+
+<dt>set:</dt>
+<dd><p>Character. PPI set to generate the plot for: "test" or "train"</p></dd>
+
+
+<dt>model:</dt>
+<dd><p>Integer (1L) or "all". Plots the decision boundaries for a specific model (e.g. 1L for model 1) or the mean of all models.</p></dd>
+
+
+<dt>x.nudge:</dt>
+<dd><p>Numerical. Which value to add to log transformation of x-axis values, in case of negative x values.</p></dd>
+
+
+<dt>type:</dt>
+<dd><p>Character. Specify to plot as "2D" or "3D" plot for trainings with 3 features.</p></dd>
+
+
+<dt>assay:</dt>
+<dd><p>Character. Specifies which assays to plot against each other. Must be one of the training features.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -92,6 +118,14 @@
 <p>a ggplot2 object</p>
     </div>
 
+    <div id="ref-examples">
+    <h2>Examples</h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"example_ppi_prediction"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">probGrid.plot</span><span class="op">(</span><span class="va">example_ppi_prediction</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 91 rows containing missing values (geom_point).</span>
+<span class="r-plt img"><img src="probGrid.plot-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
+    </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top"><h2 data-toc-skip>Contents</h2>

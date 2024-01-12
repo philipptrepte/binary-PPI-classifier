@@ -35,7 +35,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">binaryPPIclassifier</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.5.8</span>
       </span>
     </div>
 
@@ -82,7 +82,7 @@
 <p>You can install the development version of binaryPPIclassifier from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"philipptrepte/binary-PPI-classifier"</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"philipptrepte/binary-PPI-classifier"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">binaryPPIclassifier</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -121,7 +121,7 @@
 <div class="section level2">
 <h2 id="vignette">Vignette<a class="anchor" aria-label="anchor" href="#vignette"></a>
 </h2>
-<p>Please see the Vignette (under development) for a detailed description under <code>/doc/introduction.html</code></p>
+<p>Please see the <a href="https://htmlpreview.github.io/?https://github.com/philipptrepte/binary-PPI-classifier/blob/main/docs/articles/introduction.html" class="external-link">Vignette</a> for a detailed description or access from within R using <code><a href="articles/introduction.html">vignette("introduction", package = "binaryPPIclassifier")</a></code>. Make sure that when installing the package you set <code>build_vignettes = TRUE</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a>
@@ -140,6 +140,40 @@
 </h2>
 <p>Philipp Trepte - <a href="mailto:philipp.trepte@imba.oeaw.ac.at" class="email">philipp.trepte@imba.oeaw.ac.at</a> - <a href="https://www.linkedin.com/in/philipp-trepte/" class="external-link">LinkedIn</a></p>
 <p>binaryPPIclassifier: <a href="https://github.com/philipptrepte/binary-PPI-classifier" class="external-link uri">https://github.com/philipptrepte/binary-PPI-classifier</a></p>
+</div>
+<div class="section level2">
+<h2 id="session-info">Session Info<a class="anchor" aria-label="anchor" href="#session-info"></a>
+</h2>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; R version 4.2.1 (2022-06-23)</span></span>
+<span><span class="co">#&gt; Platform: x86_64-apple-darwin17.0 (64-bit)</span></span>
+<span><span class="co">#&gt; Running under: macOS Big Sur ... 10.16</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Matrix products: default</span></span>
+<span><span class="co">#&gt; BLAS:   /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRblas.0.dylib</span></span>
+<span><span class="co">#&gt; LAPACK: /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRlapack.dylib</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; locale:</span></span>
+<span><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; attached base packages:</span></span>
+<span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; other attached packages:</span></span>
+<span><span class="co">#&gt; [1] knitr_1.40  dplyr_1.1.2 DT_0.24    </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span><span class="co">#&gt;  [1] pillar_1.9.0      compiler_4.2.1    bslib_0.4.0       jquerylib_0.1.4  </span></span>
+<span><span class="co">#&gt;  [5] highr_0.9         tools_4.2.1       digest_0.6.29     jsonlite_1.8.0   </span></span>
+<span><span class="co">#&gt;  [9] evaluate_0.16     lifecycle_1.0.3   tibble_3.2.1      pkgconfig_2.0.3  </span></span>
+<span><span class="co">#&gt; [13] rlang_1.1.1       cli_3.6.1         rstudioapi_0.14   crosstalk_1.2.0  </span></span>
+<span><span class="co">#&gt; [17] yaml_2.3.5        xfun_0.32         fastmap_1.1.0     stringr_1.4.1    </span></span>
+<span><span class="co">#&gt; [21] generics_0.1.3    vctrs_0.6.3       htmlwidgets_1.5.4 sass_0.4.2       </span></span>
+<span><span class="co">#&gt; [25] webshot_0.5.3     tidyselect_1.2.0  glue_1.6.2        R6_2.5.1         </span></span>
+<span><span class="co">#&gt; [29] processx_3.7.0    fansi_1.0.3       rmarkdown_2.16    callr_3.7.2      </span></span>
+<span><span class="co">#&gt; [33] magrittr_2.0.3    ps_1.7.1          htmltools_0.5.3   utf8_1.2.2       </span></span>
+<span><span class="co">#&gt; [37] stringi_1.7.8     cachem_1.0.6</span></span></code></pre></div>
 </div>
 </div>
   </div>
