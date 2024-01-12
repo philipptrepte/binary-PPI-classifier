@@ -77,8 +77,8 @@ YOUR_RECOVERY_RATE <- recovery.rate(PPIdf = YOUR_TEST_SET, referenceSet = YOUR_T
 ## Vignette
 
 Please see the
-[Vignette](https://htmlpreview.github.io/?https://github.com/philipptrepte/binary-PPI-classifier/blob/main/docs/articles/introduction.html)
-for a detailed description or access from within R using
+[Vignette](https://philipptrepte.github.io/binary-PPI-classifier/) for a
+detailed description or access from within R using
 `vignette("introduction", package = "binaryPPIclassifier")`. Make sure
 that when installing the package you set `build_vignettes = TRUE`.
 
