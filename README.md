@@ -21,7 +21,7 @@ You can install the development version of binaryPPIclassifier from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("philipptrepte/binary-PPI-classifier")
+devtools::install_github("philipptrepte/binary-PPI-classifier", build_vignettes = TRUE)
 
 library(binaryPPIclassifier)
 ```
@@ -76,8 +76,9 @@ YOUR_RECOVERY_RATE <- recovery.rate(PPIdf = YOUR_TEST_SET, referenceSet = YOUR_T
 
 ## Vignette
 
-Please see the Vignette (under development) for a detailed description
-under `/doc/introduction.html`
+Please see the Vignette for a detailed description using
+`vignette("introduction", package = "binaryPPIclassifier")`. Make sure
+that when installing the package you set `build_vignettes = TRUE`.
 
 ## Reference
 
